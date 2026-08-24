@@ -1,0 +1,1097 @@
+<title>Kalkulator Carthago</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+
+<style>
+  :root {
+    --ground: #eceff2;
+    --surface: #ffffff;
+    --surface-2: #f6f8f9;
+    --ink: #101a24;
+    --ink-2: #4d5f6e;
+    --ink-3: #7d8d99;
+    --line: #d9e0e5;
+    --line-soft: #e9eef1;
+    --accent: #14496b;
+    --accent-ink: #ffffff;
+    --accent-soft: #e2edf4;
+    --good: #11694a;
+    --good-soft: #e3f1ea;
+    --shadow: 0 1px 2px rgba(16, 26, 36, .06), 0 8px 24px -18px rgba(16, 26, 36, .5);
+    --r: 12px;
+    --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0e151b;
+      --surface: #172029;
+      --surface-2: #1d2831;
+      --ink: #e7edf1;
+      --ink-2: #a6b6c2;
+      --ink-3: #7b8d9a;
+      --line: #2a3742;
+      --line-soft: #222d36;
+      --accent: #6fb2dc;
+      --accent-ink: #0b141b;
+      --accent-soft: #1c2f3d;
+      --good: #58c496;
+      --good-soft: #14302a;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 26px -20px rgba(0, 0, 0, .9);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0e151b;
+    --surface: #172029;
+    --surface-2: #1d2831;
+    --ink: #e7edf1;
+    --ink-2: #a6b6c2;
+    --ink-3: #7b8d9a;
+    --line: #2a3742;
+    --line-soft: #222d36;
+    --accent: #6fb2dc;
+    --accent-ink: #0b141b;
+    --accent-soft: #1c2f3d;
+    --good: #58c496;
+    --good-soft: #14302a;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 26px -20px rgba(0, 0, 0, .9);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 0 0 84px;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .top {
+    background: var(--accent);
+    color: var(--accent-ink);
+    padding: 18px 18px 16px;
+  }
+  .top .eyebrow {
+    font-family: var(--display);
+    text-transform: uppercase;
+    letter-spacing: .16em;
+    font-size: 12px;
+    opacity: .8;
+    margin: 0 0 2px;
+  }
+  .top h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 30px;
+    line-height: 1.05;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+  @media (min-width: 900px) {
+    body { padding-bottom: 24px; }
+    .wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(330px, 1fr);
+      gap: 18px;
+      align-items: start;
+      padding: 22px 18px;
+    }
+    .side { position: sticky; top: 18px; }
+    .mobile-bar { display: none !important; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card > h2 {
+    font-family: var(--display);
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-2);
+    margin: 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--accent);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .card > h2 .rate {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: .04em;
+    color: var(--ink-3);
+  }
+
+  .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .field > span {
+    font-family: var(--display);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 420px) {
+    .duo, .trio { grid-template-columns: 1fr; }
+  }
+
+  input, select, button { font-family: inherit; font-size: 16px; color: inherit; }
+  input, select {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+  }
+  input.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+  input[readonly] { color: var(--ink-2); border-style: dashed; }
+  select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+    background-position: calc(100% - 19px) 21px, calc(100% - 13px) 21px;
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+    padding-right: 34px;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible, .toggle:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .rate input {
+    width: 62px;
+    min-height: 32px;
+    padding: 2px 6px;
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 14px;
+  }
+
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    padding: 8px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle input { width: 20px; min-height: 20px; height: 20px; padding: 0; accent-color: var(--accent); flex: none; }
+  .toggle.on { background: var(--accent-soft); border-color: var(--accent); }
+  .toggle .label { font-weight: 500; }
+  .toggle .sub { display: block; font-size: 13px; color: var(--ink-3); font-weight: 400; }
+
+  .withrate { display: grid; grid-template-columns: minmax(0, 1fr) 78px; gap: 8px; }
+  .withrate.wide { grid-template-columns: minmax(0, 1fr) 116px; }
+  .withunit { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; }
+  .withunit select { padding-right: 28px; background-position: calc(100% - 16px) 21px, calc(100% - 10px) 21px; }
+  .ratebox { display: flex; align-items: center; gap: 5px; min-width: 0; }
+  .ratebox input { min-height: 46px; }
+  .ratebox span { font-size: 14px; color: var(--ink-3); }
+
+  .rows { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) 118px 42px; gap: 8px; align-items: center; }
+  .row .kill {
+    height: 42px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    border-radius: 9px;
+    color: var(--ink-3);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .row .kill:hover { color: #c0504a; border-color: #c0504a; }
+
+  .btn {
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    border-radius: 9px;
+    min-height: 44px;
+    padding: 10px 16px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .btn:hover { background: var(--accent-soft); }
+  .btn.solid { background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { border-color: var(--line); color: var(--ink-2); }
+  .btn.ghost:hover { background: var(--surface-2); }
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btns .btn { flex: 1 1 140px; }
+
+  .sub-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line);
+    font-size: 14px;
+    color: var(--ink-3);
+  }
+  .sub-line b { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); font-size: 15px; }
+
+  table {
+    width: 100%;
+    min-width: 390px;
+    border-collapse: collapse;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  th, td { padding: 7px 0; text-align: right; }
+  th + th, td + td { padding-left: 12px; }
+  th:first-child, td:first-child { text-align: left; }
+  th {
+    font-family: var(--display);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-3);
+    border-bottom: 1px solid var(--line);
+  }
+  td { border-bottom: 1px solid var(--line-soft); }
+  td:not(:first-child) { font-family: var(--mono); }
+  tr.head td { font-weight: 600; }
+  tr.item td { color: var(--ink-2); }
+  tr.item td:first-child { padding-left: 12px; }
+  @media (max-width: 560px) {
+    table { min-width: 0; }
+    th.katalog, td.katalog { display: none; }
+  }
+  tr.detail td {
+    text-align: left;
+    font-family: var(--body);
+    font-size: 13px;
+    color: var(--ink-3);
+    border-bottom: none;
+    padding-top: 2px;
+  }
+
+  .totals { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+  .totals .t {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 5px 0;
+  }
+  .totals .t > span:last-child { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .totals .cut > span:last-child { color: var(--good); }
+  .totals .pay {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 2px solid var(--accent);
+    align-items: baseline;
+  }
+  .totals .pay > span:first-child {
+    font-family: var(--display);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .totals .pay > span:last-child { font-size: 26px; font-weight: 600; }
+  .totals .minor { font-size: 13px; color: var(--ink-3); }
+
+  .saving {
+    margin: 4px 0 0;
+    padding: 9px 11px;
+    background: var(--good-soft);
+    border-radius: 9px;
+    font-size: 13px;
+    color: var(--good);
+  }
+
+  .mobile-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -8px 24px -20px rgba(0, 0, 0, .8);
+  }
+  .mobile-bar .lbl {
+    font-family: var(--display);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-size: 11px;
+    color: var(--ink-3);
+  }
+  .mobile-bar .val {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+  .mobile-bar .vat {
+    font-size: 12px;
+    color: var(--ink-3);
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+  .mobile-bar a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+    border: 1px solid var(--accent);
+    border-radius: 9px;
+    padding: 9px 13px;
+    white-space: nowrap;
+  }
+
+  .stamp { font-size: 13px; color: var(--ink-3); }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .wrap { display: block; padding: 0; }
+    .card.editor, .btns, .mobile-bar { display: none !important; }
+    table { min-width: 0; }
+    th.katalog, td.katalog { display: table-cell; }
+    .side { position: static; }
+    .card { box-shadow: none; border: none; padding: 0; }
+    .top { background: #fff; color: #000; border-bottom: 2px solid #000; padding: 0 0 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<header class="top">
+  <p class="eyebrow">Carthago · kalkulacja oferty</p>
+  <h1>Kalkulator cen kamperów</h1>
+</header>
+
+<div class="wrap">
+  <div class="col">
+    <section class="card editor">
+      <h2>Pojazd bazowy</h2>
+      <div class="duo">
+        <label class="field">
+          <span>Model</span>
+          <select id="model"></select>
+        </label>
+        <label class="field">
+          <span>Ceny z cennika</span>
+          <select id="priceMode">
+            <option value="net">netto</option>
+            <option value="gross">brutto z VAT 23% (÷ 1,23)</option>
+          </select>
+        </label>
+      </div>
+      <div class="duo">
+        <label class="field">
+          <span>Cena katalogowa</span>
+          <input id="basePrice" class="num" type="text" inputmode="decimal" placeholder="0,00">
+        </label>
+        <label class="field">
+          <span>Rabat modelu [%]</span>
+          <input id="baseDiscount" class="num" type="text" inputmode="decimal">
+        </label>
+      </div>
+      <div class="duo">
+        <div class="withrate">
+          <label class="toggle" id="diToggle">
+            <input id="di" type="checkbox">
+            <span class="label">Rabat DI<span class="sub">order type</span></span>
+          </label>
+          <label class="ratebox">
+            <input id="diRate" class="num" type="text" inputmode="decimal" aria-label="Rabat DI w procentach"><span>%</span>
+          </label>
+        </div>
+        <div class="withrate">
+          <label class="toggle" id="ciToggle">
+            <input id="ci" type="checkbox">
+            <span class="label">Rabat CI<span class="sub">wg faktur 3%</span></span>
+          </label>
+          <label class="ratebox">
+            <input id="ciRate" class="num" type="text" inputmode="decimal" aria-label="Rabat CI w procentach"><span>%</span>
+          </label>
+        </div>
+      </div>
+      <div class="duo">
+        <div class="field">
+          <span>Rabat specjalny</span>
+          <div class="withunit">
+            <input id="specialDiscount" class="num" type="text" inputmode="decimal" placeholder="0,00" aria-label="Rabat specjalny">
+            <select id="specialMode" aria-label="Rabat specjalny — kwota czy procent">
+              <option value="amount">kwota</option>
+              <option value="percent">%</option>
+            </select>
+          </div>
+        </div>
+        <label class="field">
+          <span>Rabat efektywny na pojazd</span>
+          <input id="effDiscount" class="num" type="text" readonly tabindex="-1">
+        </label>
+      </div>
+      <div class="sub-line"><span>Pojazd po rabacie</span><b id="baseNet">—</b></div>
+    </section>
+
+    <section class="card editor">
+      <h2>Pakiety <span class="rate">rabat <input id="packageDiscount" type="text" inputmode="decimal" aria-label="Rabat na pakiety w procentach">%</span></h2>
+      <div class="rows" id="packageRows"></div>
+      <div class="btns"><button class="btn ghost" type="button" id="addPackage">+ Dodaj pakiet</button></div>
+      <div class="sub-line"><span>Pakiety po rabacie</span><b id="packagesNet">—</b></div>
+    </section>
+
+    <section class="card editor">
+      <h2>Opcje <span class="rate">rabat <input id="optionDiscount" type="text" inputmode="decimal" aria-label="Rabat na opcje w procentach">%</span></h2>
+      <div class="rows" id="optionRows"></div>
+      <div class="btns"><button class="btn ghost" type="button" id="addOption">+ Dodaj opcję</button></div>
+      <div class="sub-line"><span>Opcje po rabacie</span><b id="optionsNet">—</b></div>
+    </section>
+
+    <section class="card editor">
+      <h2>Koszty z faktury <span class="rate">bez rabatu, w skoncie</span></h2>
+      <div class="rows" id="costRows"></div>
+      <div class="btns"><button class="btn ghost" type="button" id="addCost">+ Dodaj koszt</button></div>
+      <div class="sub-line"><span>Koszty z faktury</span><b id="costsNet">—</b></div>
+    </section>
+
+    <section class="card editor">
+      <h2>Akcyza i transport <span class="rate">po skoncie</span></h2>
+      <div class="duo">
+        <label class="field">
+          <span>Podwozie</span>
+          <select id="chassis"></select>
+        </label>
+        <label class="field">
+          <span>Stawka akcyzy [%]</span>
+          <input id="exciseRate" class="num" type="text" inputmode="decimal" aria-label="Stawka akcyzy w procentach">
+        </label>
+      </div>
+      <div class="withrate wide">
+        <label class="toggle" id="transportToggle">
+          <input id="transport" type="checkbox">
+          <span class="label">Transport do Polski<span class="sub">po akcyzie, bez rabatu</span></span>
+        </label>
+        <label class="ratebox">
+          <input id="transportRate" class="num" type="text" inputmode="decimal" aria-label="Koszt transportu do Polski">
+        </label>
+      </div>
+    </section>
+
+    <section class="card editor">
+      <h2>Płatność</h2>
+      <label class="toggle" id="skontoToggle">
+        <input id="skonto" type="checkbox" checked>
+        <span class="label">Płatność w 14 dni<span class="sub">skonto od całości po rabatach</span></span>
+      </label>
+      <div class="trio">
+        <label class="field">
+          <span>Skonto [%]</span>
+          <input id="skontoRate" class="num" type="text" inputmode="decimal">
+        </label>
+        <label class="field">
+          <span>VAT [%] · 0 = WDT</span>
+          <input id="vat" class="num" type="text" inputmode="decimal">
+        </label>
+        <label class="field">
+          <span>Waluta</span>
+          <select id="currency">
+            <option value="EUR">EUR</option>
+            <option value="PLN">PLN</option>
+          </select>
+        </label>
+      </div>
+    </section>
+  </div>
+
+  <div class="col side">
+    <section class="card" id="summary">
+      <h2>Kalkulacja</h2>
+      <p class="stamp" id="stamp"></p>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Pozycja</th><th class="katalog">Katalog</th><th>Rabat</th><th>Netto</th></tr>
+          </thead>
+          <tbody id="sumBody"></tbody>
+        </table>
+      </div>
+      <div class="totals" id="totals"></div>
+      <p class="saving" id="saving"></p>
+      <div class="btns editor">
+        <button class="btn solid" type="button" id="print">Drukuj / PDF</button>
+        <button class="btn ghost" type="button" id="reset">Wyczyść</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="mobile-bar">
+  <div>
+    <div class="lbl">Do zapłaty netto</div>
+    <div class="val" id="barNet">—</div>
+    <div class="vat" id="barGross">—</div>
+  </div>
+  <a href="#summary">Kalkulacja</a>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var MODELS = [
+    { id: "c1-tourer", label: "C1-Tourer", discount: 10 },
+    { id: "c2-tourer", label: "C2-Tourer", discount: 11 },
+    { id: "c-line", label: "Chic C-Line (T / I Integra)", discount: 11 },
+    { id: "e-line", label: "Chic E-Line", discount: 12 },
+    { id: "s-plus", label: "Chic S-Plus", discount: 12 },
+    { id: "inny", label: "Inny model (rabat ręcznie)", discount: 0 }
+  ];
+
+  // Polska akcyza: 3,1% dla pojemności do 2000 cm3, 18,6% powyżej.
+  var CHASSIS = [
+    { id: "mb", label: "Mercedes-Benz", rate: "3,1" },
+    { id: "fiat", label: "Fiat", rate: "18,6" },
+    { id: "iveco", label: "Iveco", rate: "18,6" },
+    { id: "none", label: "Bez akcyzy", rate: "0" }
+  ];
+
+  var STORAGE_KEY = "carthago-kalkulator-v2";
+
+  var defaults = {
+    model: "c2-tourer",
+    priceMode: "net",
+    basePrice: "",
+    baseDiscount: "11",
+    di: false,
+    diRate: "3",
+    ci: false,
+    ciRate: "3",
+    specialDiscount: "",
+    specialMode: "amount",
+    packageDiscount: "15",
+    optionDiscount: "18",
+    packages: [{ name: "", price: "" }],
+    options: [{ name: "", price: "" }],
+    costs: [
+      { name: "Prior carriage charges (poz. 100002)", price: "" },
+      { name: "Delivery costs (poz. 100005)", price: "" },
+      { name: "Insurance allowance (poz. 100007)", price: "18,50" }
+    ],
+    chassis: "mb",
+    exciseRate: "3,1",
+    transport: false,
+    transportRate: "1100",
+    currency: "EUR",
+    vat: "0",
+    skonto: true,
+    skontoRate: "2"
+  };
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+  var state = (function () {
+    var s = clone(defaults);
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var saved = JSON.parse(raw);
+        Object.keys(defaults).forEach(function (k) {
+          if (saved[k] !== undefined && saved[k] !== null) s[k] = saved[k];
+        });
+      }
+    } catch (e) { /* brak dostępu do pamięci przeglądarki — start od wartości domyślnych */ }
+    if (!Array.isArray(s.packages) || !s.packages.length) s.packages = [{ name: "", price: "" }];
+    if (!Array.isArray(s.options) || !s.options.length) s.options = [{ name: "", price: "" }];
+    if (!Array.isArray(s.costs) || !s.costs.length) s.costs = clone(defaults.costs);
+    return s;
+  })();
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* zapis niedostępny */ }
+  }
+
+  var el = {};
+  ["model", "priceMode", "basePrice", "baseDiscount", "di", "diRate", "ci", "ciRate",
+   "specialDiscount", "specialMode", "effDiscount", "baseNet",
+   "packageDiscount", "packageRows", "packagesNet", "addPackage",
+   "optionDiscount", "optionRows", "optionsNet", "addOption",
+   "costRows", "costsNet", "addCost", "chassis", "exciseRate",
+   "transport", "transportRate",
+   "currency", "vat", "skonto", "skontoRate",
+   "diToggle", "ciToggle", "transportToggle", "skontoToggle",
+   "sumBody", "totals", "saving", "stamp", "barNet", "barGross", "print", "reset"]
+  .forEach(function (id) { el[id] = document.getElementById(id); });
+
+  function num(v) {
+    var n = parseFloat(String(v === undefined || v === null ? "" : v).replace(/\s/g, "").replace(",", "."));
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+
+  function pct(v) {
+    var n = num(v);
+    return n > 100 ? 100 : n;
+  }
+
+  function round(v) {
+    var n = typeof v === "number" ? v : num(v);
+    if (!isFinite(n)) n = 0;
+    return Math.round((n + Number.EPSILON) * 100) / 100;
+  }
+
+  function money(v) {
+    return new Intl.NumberFormat("pl-PL", {
+      style: "currency",
+      currency: state.currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(round(v));
+  }
+
+  function percent(v) {
+    return new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 2 }).format(round(v)) + "%";
+  }
+
+  // Rabaty procentowe na pojazd bazowy liczone są od ceny katalogowej i sumowane
+  // (na fakturach Carthago: model range discount + order type discount DI + CI discount).
+  function effectiveBaseDiscount() {
+    var sum = pct(state.baseDiscount) +
+      (state.di ? pct(state.diRate) : 0) +
+      (state.ci ? pct(state.ciRate) : 0);
+    return sum > 100 ? 100 : sum;
+  }
+
+  function chassisLabel() {
+    var c = CHASSIS.filter(function (x) { return x.id === state.chassis; })[0];
+    return c ? c.label : "";
+  }
+
+  function transportCost() {
+    return state.transport ? num(state.transportRate) : 0;
+  }
+
+  function sumItems(items) {
+    return items.reduce(function (a, it) { return a + listNet(it.price); }, 0);
+  }
+
+  // W konfiguracji Carthago ceny podane są brutto z polskim VAT 23%, a podstawą
+  // faktury jest cena netto każdej pozycji z osobna (brutto ÷ 1,23, do groszy).
+  function listNet(v) {
+    var n = num(v);
+    return state.priceMode === "gross" ? round(n / 1.23) : n;
+  }
+
+  // Faktury Carthago zaokrąglają kwotę rabatu każdej pozycji z osobna,
+  // dlatego rabat liczymy per pozycja, a nie od sumy.
+  function itemNet(price, discount) {
+    return price - round(price * discount / 100);
+  }
+
+  function sumItemsNet(items, discount) {
+    return items.reduce(function (a, it) { return a + itemNet(listNet(it.price), discount); }, 0);
+  }
+
+  function calc() {
+    var baseList = listNet(state.basePrice);
+    var baseDisc = effectiveBaseDiscount();
+    var discModel = round(baseList * pct(state.baseDiscount) / 100);
+    var discDi = state.di ? round(baseList * pct(state.diRate) / 100) : 0;
+    var discCi = state.ci ? round(baseList * pct(state.ciRate) / 100) : 0;
+    // Rabat specjalny (special discount) wpisywany kwotowo albo procentowo.
+    var specialRaw = state.specialMode === "percent"
+      ? round(baseList * pct(state.specialDiscount) / 100)
+      : num(state.specialDiscount);
+    var special = Math.min(specialRaw, baseList - discModel - discDi - discCi);
+    var baseNet = baseList - discModel - discDi - discCi - special;
+
+    var pkgList = sumItems(state.packages);
+    var pkgDisc = pct(state.packageDiscount);
+    var pkgNet = sumItemsNet(state.packages, pkgDisc);
+
+    var optList = sumItems(state.options);
+    var optDisc = pct(state.optionDiscount);
+    var optNet = sumItemsNet(state.options, optDisc);
+
+    // Koszty z faktury (transport fabryczny, ubezpieczenie) wchodzą do podstawy skonta.
+    var costsTotal = state.costs.reduce(function (a, k) { return a + num(k.price); }, 0);
+    // Transport do Polski nie jest rabatowany ani objęty skontem — dochodzi na końcu.
+    var transport = transportCost();
+
+    var listTotal = baseList + pkgList + optList;
+    var afterDiscounts = baseNet + pkgNet + optNet;
+    // Skonto liczone jest od całej sumy faktury Carthago — razem z jej kosztami.
+    var subtotal = afterDiscounts + costsTotal;
+    var skontoRate = state.skonto ? pct(state.skontoRate) : 0;
+    var skontoAmount = round(subtotal * skontoRate / 100);
+    var invoiceNet = subtotal - skontoAmount;
+    // Akcyza liczona od ceny końcowej faktury, po wszystkich rabatach i skoncie.
+    var exciseRate = pct(state.exciseRate);
+    var excise = round(invoiceNet * exciseRate / 100);
+    var afterExcise = invoiceNet + excise;
+    // Transport do Polski dochodzi na samym końcu, już po akcyzie.
+    var net = afterExcise + transport;
+    var vatRate = pct(state.vat);
+    var vat = round(net * vatRate / 100);
+
+    return {
+      baseList: baseList, baseDisc: baseDisc, baseNet: baseNet, special: special,
+      pkgList: pkgList, pkgDisc: pkgDisc, pkgNet: pkgNet,
+      optList: optList, optDisc: optDisc, optNet: optNet,
+      costsTotal: costsTotal, transport: transport, invoiceNet: invoiceNet,
+      exciseRate: exciseRate, excise: excise, afterExcise: afterExcise,
+      listTotal: listTotal, afterDiscounts: afterDiscounts,
+      discountTotal: listTotal - afterDiscounts,
+      subtotal: subtotal,
+      skontoRate: skontoRate, skontoAmount: skontoAmount,
+      net: net, vatRate: vatRate, vat: vat, gross: net + vat,
+      saving: (listTotal - afterDiscounts) + skontoAmount
+    };
+  }
+
+  function cell(text, cls) {
+    var td = document.createElement("td");
+    td.textContent = text;
+    if (cls) td.className = cls;
+    return td;
+  }
+
+  function sumRow(label, list, discount, net, cls) {
+    var tr = document.createElement("tr");
+    tr.className = cls;
+    tr.appendChild(cell(label));
+    tr.appendChild(cell(money(list), "katalog"));
+    tr.appendChild(cell(discount === null ? "—" : percent(discount)));
+    tr.appendChild(cell(money(net)));
+    return tr;
+  }
+
+  var ROW_KINDS = {
+    packages: { container: "packageRows", placeholder: "Nazwa pakietu" },
+    options: { container: "optionRows", placeholder: "Nazwa opcji" },
+    costs: { container: "costRows", placeholder: "Nazwa kosztu" }
+  };
+
+  function renderRows(kind) {
+    var container = el[ROW_KINDS[kind].container];
+    var placeholder = ROW_KINDS[kind].placeholder;
+    container.textContent = "";
+
+    state[kind].forEach(function (item, index) {
+      var row = document.createElement("div");
+      row.className = "row";
+
+      var name = document.createElement("input");
+      name.type = "text";
+      name.placeholder = placeholder;
+      name.value = item.name;
+      name.setAttribute("aria-label", placeholder);
+      name.addEventListener("input", function () {
+        state[kind][index].name = name.value;
+        save();
+        render();
+      });
+
+      var price = document.createElement("input");
+      price.type = "text";
+      price.className = "num";
+      price.inputMode = "decimal";
+      price.placeholder = "0,00";
+      price.value = item.price;
+      price.setAttribute("aria-label", "Cena katalogowa netto");
+      price.addEventListener("input", function () {
+        state[kind][index].price = price.value;
+        save();
+        render();
+      });
+
+      var kill = document.createElement("button");
+      kill.type = "button";
+      kill.className = "kill";
+      kill.textContent = "×";
+      kill.setAttribute("aria-label", "Usuń pozycję");
+      kill.addEventListener("click", function () {
+        state[kind].splice(index, 1);
+        if (!state[kind].length) state[kind].push({ name: "", price: "" });
+        save();
+        renderRows(kind);
+        render();
+      });
+
+      row.appendChild(name);
+      row.appendChild(price);
+      row.appendChild(kill);
+      container.appendChild(row);
+    });
+  }
+
+  function render() {
+    var c = calc();
+    var body = el.sumBody;
+    body.textContent = "";
+
+    var model = MODELS.filter(function (m) { return m.id === state.model; })[0];
+    body.appendChild(sumRow(model ? model.label : "Pojazd", c.baseList, c.baseDisc, c.baseNet, "head"));
+
+    var extras = [];
+    if (state.di) extras.push("DI " + percent(state.diRate));
+    if (state.ci) extras.push("CI " + percent(state.ciRate));
+    if (c.special > 0) {
+      extras.push("rabat specjalny " + (state.specialMode === "percent"
+        ? percent(pct(state.specialDiscount)) + " (" + money(c.special) + ")"
+        : money(c.special)));
+    }
+    if (extras.length) {
+      var tr = document.createElement("tr");
+      tr.className = "detail";
+      var td = cell("w tym: rabat modelu " + percent(pct(state.baseDiscount)) + " + " + extras.join(" + "));
+      td.colSpan = 4;
+      tr.appendChild(td);
+      body.appendChild(tr);
+    }
+
+    if (c.pkgList > 0) {
+      body.appendChild(sumRow("Pakiety", c.pkgList, c.pkgDisc, c.pkgNet, "head"));
+      state.packages.forEach(function (p) {
+        var v = listNet(p.price);
+        if (v > 0) body.appendChild(sumRow(p.name || "Pakiet", v, c.pkgDisc, itemNet(v, c.pkgDisc), "item"));
+      });
+    }
+
+    if (c.optList > 0) {
+      body.appendChild(sumRow("Opcje", c.optList, c.optDisc, c.optNet, "head"));
+      state.options.forEach(function (o) {
+        var v = listNet(o.price);
+        if (v > 0) body.appendChild(sumRow(o.name || "Opcja", v, c.optDisc, itemNet(v, c.optDisc), "item"));
+      });
+    }
+
+    if (c.costsTotal > 0) {
+      body.appendChild(sumRow("Koszty z faktury", c.costsTotal, null, c.costsTotal, "head"));
+      state.costs.forEach(function (k) {
+        var v = num(k.price);
+        if (v > 0) body.appendChild(sumRow(k.name || "Koszt", v, null, v, "item"));
+      });
+    }
+
+    var lines = [
+      { label: "Wartość katalogowa netto", value: money(c.listTotal) },
+      { label: "Rabaty razem", value: "− " + money(c.discountTotal), cls: "cut" },
+      { label: "Po rabatach netto", value: money(c.afterDiscounts) }
+    ];
+    if (c.costsTotal > 0) {
+      lines.push({ label: "Koszty z faktury", value: "+ " + money(c.costsTotal) });
+      lines.push({ label: "Suma faktury netto", value: money(c.subtotal) });
+    }
+    if (c.skontoRate > 0) {
+      lines.push({ label: "Skonto " + percent(c.skontoRate) + " · 14 dni", value: "− " + money(c.skontoAmount), cls: "cut" });
+    }
+    var hasExtras = c.transport > 0 || c.excise > 0;
+    if (hasExtras) {
+      lines.push({ label: "Faktura po skoncie", value: money(c.invoiceNet) });
+    }
+    if (c.excise > 0) {
+      lines.push({ label: "Akcyza " + percent(c.exciseRate) + " · " + chassisLabel(), value: "+ " + money(c.excise) });
+    }
+    if (c.excise > 0 && c.transport > 0) {
+      lines.push({ label: "Cena po akcyzie", value: money(c.afterExcise) });
+    }
+    if (c.transport > 0) {
+      lines.push({ label: "Transport do Polski", value: "+ " + money(c.transport) });
+    }
+    lines.push({ label: hasExtras ? "Koszt auta netto" : "Do zapłaty netto", value: money(c.net), cls: "pay" });
+    if (c.vatRate > 0) {
+      lines.push({ label: "VAT " + percent(c.vatRate), value: money(c.vat), cls: "minor" });
+      lines.push({ label: "Do zapłaty brutto", value: money(c.gross), cls: "minor" });
+    }
+
+    el.totals.textContent = "";
+    lines.forEach(function (line) {
+      var div = document.createElement("div");
+      div.className = "t" + (line.cls ? " " + line.cls : "");
+      var a = document.createElement("span");
+      a.textContent = line.label;
+      var b = document.createElement("span");
+      b.textContent = line.value;
+      div.appendChild(a);
+      div.appendChild(b);
+      el.totals.appendChild(div);
+    });
+
+    el.saving.textContent = c.listTotal > 0
+      ? "Rabaty i skonto razem: " + money(c.saving) + " — " + percent(c.saving / c.listTotal * 100) + " wartości katalogowej."
+      : "Wpisz cenę katalogową pojazdu, aby zobaczyć kalkulację.";
+
+    el.stamp.textContent = new Intl.DateTimeFormat("pl-PL", { dateStyle: "long" }).format(new Date());
+    el.effDiscount.value = percent(c.baseDisc);
+    el.baseNet.textContent = money(c.baseNet);
+    el.packagesNet.textContent = money(c.pkgNet);
+    el.optionsNet.textContent = money(c.optNet);
+    el.costsNet.textContent = money(c.costsTotal);
+    el.barNet.textContent = money(c.net);
+    el.barGross.textContent = c.vatRate > 0
+      ? "brutto " + money(c.gross)
+      : (c.excise > 0 ? "w tym akcyza " + money(c.excise) : "przed skontem " + money(c.subtotal));
+
+    el.diToggle.classList.toggle("on", state.di);
+    el.ciToggle.classList.toggle("on", state.ci);
+    el.transportToggle.classList.toggle("on", state.transport);
+    el.skontoToggle.classList.toggle("on", state.skonto);
+  }
+
+  function fillInputs() {
+    el.model.textContent = "";
+    MODELS.forEach(function (m) {
+      var opt = document.createElement("option");
+      opt.value = m.id;
+      opt.textContent = m.discount > 0 ? m.label + " — " + m.discount + "%" : m.label;
+      el.model.appendChild(opt);
+    });
+    el.model.value = state.model;
+    el.priceMode.value = state.priceMode;
+    el.basePrice.value = state.basePrice;
+    el.baseDiscount.value = state.baseDiscount;
+    el.di.checked = state.di;
+    el.diRate.value = state.diRate;
+    el.ci.checked = state.ci;
+    el.ciRate.value = state.ciRate;
+    el.specialDiscount.value = state.specialDiscount;
+    el.specialMode.value = state.specialMode;
+    el.packageDiscount.value = state.packageDiscount;
+    el.optionDiscount.value = state.optionDiscount;
+    el.chassis.textContent = "";
+    CHASSIS.forEach(function (ch) {
+      var opt = document.createElement("option");
+      opt.value = ch.id;
+      opt.textContent = ch.rate === "0" ? ch.label : ch.label + " — " + ch.rate + "%";
+      el.chassis.appendChild(opt);
+    });
+    el.chassis.value = state.chassis;
+    el.exciseRate.value = state.exciseRate;
+    el.transport.checked = state.transport;
+    el.transportRate.value = state.transportRate;
+    el.currency.value = state.currency;
+    el.vat.value = state.vat;
+    el.skonto.checked = state.skonto;
+    el.skontoRate.value = state.skontoRate;
+    renderRows("packages");
+    renderRows("options");
+    renderRows("costs");
+  }
+
+  function bind(node, prop, isCheck) {
+    node.addEventListener(isCheck ? "change" : "input", function () {
+      state[prop] = isCheck ? node.checked : node.value;
+      save();
+      render();
+    });
+  }
+
+  el.model.addEventListener("change", function () {
+    state.model = el.model.value;
+    var m = MODELS.filter(function (x) { return x.id === state.model; })[0];
+    if (m && m.discount > 0) {
+      state.baseDiscount = String(m.discount);
+      el.baseDiscount.value = state.baseDiscount;
+    }
+    save();
+    render();
+  });
+
+  bind(el.priceMode, "priceMode");
+  bind(el.basePrice, "basePrice");
+  bind(el.baseDiscount, "baseDiscount");
+  bind(el.di, "di", true);
+  bind(el.diRate, "diRate");
+  bind(el.ci, "ci", true);
+  bind(el.ciRate, "ciRate");
+  bind(el.specialDiscount, "specialDiscount");
+  bind(el.specialMode, "specialMode");
+  bind(el.exciseRate, "exciseRate");
+  bind(el.transport, "transport", true);
+
+  el.chassis.addEventListener("change", function () {
+    state.chassis = el.chassis.value;
+    var ch = CHASSIS.filter(function (x) { return x.id === state.chassis; })[0];
+    if (ch) {
+      state.exciseRate = ch.rate;
+      el.exciseRate.value = ch.rate;
+    }
+    save();
+    render();
+  });
+  bind(el.transportRate, "transportRate");
+  bind(el.packageDiscount, "packageDiscount");
+  bind(el.optionDiscount, "optionDiscount");
+  bind(el.currency, "currency");
+  bind(el.vat, "vat");
+  bind(el.skonto, "skonto", true);
+  bind(el.skontoRate, "skontoRate");
+
+  el.addPackage.addEventListener("click", function () {
+    state.packages.push({ name: "", price: "" });
+    save();
+    renderRows("packages");
+  });
+
+  el.addOption.addEventListener("click", function () {
+    state.options.push({ name: "", price: "" });
+    save();
+    renderRows("options");
+  });
+
+  el.addCost.addEventListener("click", function () {
+    state.costs.push({ name: "", price: "" });
+    save();
+    renderRows("costs");
+  });
+
+  el.print.addEventListener("click", function () { window.print(); });
+
+  el.reset.addEventListener("click", function () {
+    if (!window.confirm("Wyczyścić całą kalkulację?")) return;
+    state = clone(defaults);
+    save();
+    fillInputs();
+    render();
+  });
+
+  fillInputs();
+  render();
+})();
+</script>
