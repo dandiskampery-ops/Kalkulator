@@ -16,12 +16,76 @@ Kalkulator jest opublikowany jako strona pod linkiem — działa na telefonie i 
 komputerze, bez instalacji. Wprowadzone dane zapisują się lokalnie w
 przeglądarce (`localStorage`), osobno na każdym urządzeniu.
 
-## Plik źródłowy
+## Pliki projektu
 
-`kalkulator.html` celowo nie zawiera znaczników `<!doctype>`, `<html>`,
-`<head>` i `<body>` — są dodawane automatycznie przy publikacji. Po każdej
-zmianie w tym pliku trzeba go opublikować ponownie pod tym samym adresem, żeby
-link pokazywał aktualną wersję.
+| Plik | Rola |
+|---|---|
+| `kalkulator.html` | **źródło** — cała logika i wygląd kalkulatora; publikowane jako Artifact, dlatego celowo bez znaczników `<!doctype>`, `<html>`, `<head>` i `<body>` |
+| `build.py` | opakowuje źródło w pełną stronę `index.html` (nagłówek, manifest, ikony, service worker) i stempluje wersję w `sw.js` |
+| `index.html` | wersja PWA — plik generowany, nie edytować ręcznie |
+| `manifest.webmanifest` | nazwa, ikony i kolory aplikacji |
+| `sw.js` | service worker: praca offline i wykrywanie nowej wersji |
+| `icon-*.png`, `apple-touch-icon.png` | ikony aplikacji |
+
+Po każdej zmianie w `kalkulator.html`:
+
+```bash
+python3 build.py      # przebudowuje index.html i stempluje sw.js
+git add -A && git commit -m "opis zmiany" && git push
+```
+
+Wdrożenie na Cloudflare Pages rusza samo po `push`. Wersję opublikowaną jako
+Artifact trzeba dodatkowo opublikować ponownie pod tym samym adresem.
+
+## Aplikacja (PWA) na Cloudflare Pages z logowaniem
+
+Kalkulator działa jako aplikacja instalowana na telefonie i komputerze: własna
+ikona, pełny ekran, **działanie offline** (po pierwszym otwarciu wszystko siedzi
+w pamięci przeglądarki) i pasek „Jest nowsza wersja” po wdrożeniu zmian.
+
+### 1. Publikacja na Cloudflare Pages
+
+1. [dash.cloudflare.com](https://dash.cloudflare.com) -> **Workers & Pages** ->
+   **Create** -> zakładka **Pages** -> **Connect to Git**.
+2. Połącz konto GitHub i wybierz repozytorium `dandiskampery-ops/Kalkulator`.
+3. Ustaw:
+   * **Production branch**: `claude/carthago-price-calculator-hp0h04`
+     (albo `main`, jeśli wcześniej scalisz tam zmiany),
+   * **Framework preset**: `None`,
+   * **Build command**: puste,
+   * **Build output directory**: `/`.
+4. **Save and Deploy**. Po chwili dostajesz adres w rodzaju
+   `kalkulator.pages.dev`. Każdy kolejny `push` wdraża się automatycznie.
+
+Własna domena (np. `kalkulator.dandiskampery.pl`) — zakładka **Custom domains**
+w projekcie Pages.
+
+### 2. Zamknięcie na logowanie (Cloudflare Access)
+
+1. W panelu Cloudflare -> **Zero Trust** -> **Access** -> **Applications** ->
+   **Add an application** -> **Self-hosted**.
+2. **Application name**: `Kalkulator Carthago`,
+   **Session duration**: np. `1 month` (rzadsze logowanie na telefonie).
+3. **Application domain**: adres z Pages, np. `kalkulator.pages.dev`
+   (albo własna domena).
+4. Dodaj politykę: **Action** `Allow` -> **Include** -> **Emails** i wpisz adresy
+   osób, które mają mieć dostęp.
+5. W **Login methods** zostaw **One-time PIN** — logowanie kodem wysyłanym
+   mailem, bez zakładania kont.
+
+Plan darmowy obejmuje do 50 użytkowników.
+
+### 3. Instalacja na urządzeniu
+
+* **Android / Chrome**: otwórz adres -> menu -> *Zainstaluj aplikację*.
+* **iPhone / Safari**: otwórz adres -> ikona udostępniania -> *Do ekranu
+  początkowego*.
+* **Windows / macOS**: w Chrome lub Edge ikona instalacji w pasku adresu.
+
+Przy pierwszym uruchomieniu aplikacja poprosi o kod z maila (Cloudflare
+Access). Później otwiera się od razu, a bez zasięgu liczy dalej z pamięci —
+zalogowanie jest potrzebne tylko wtedy, gdy sesja wygaśnie i urządzenie jest
+online.
 
 ## Ceny z cennika: netto czy brutto
 

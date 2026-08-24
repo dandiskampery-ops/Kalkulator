@@ -1,0 +1,20 @@
+{
+  "name": "Kalkulator Carthago",
+  "short_name": "Kalkulator",
+  "description": "Kalkulator ceny kampera Carthago: rabaty, koszty fabryczne, skonto, akcyza i transport do Polski.",
+  "lang": "pl",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#eceff2",
+  "theme_color": "#14496b",
+  "categories": ["business", "productivity", "finance"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
