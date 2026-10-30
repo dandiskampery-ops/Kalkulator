@@ -1,7 +1,7 @@
 /* Service worker kalkulatora Carthago.
    Wersję stempluje build.py — każda kompilacja tworzy nową pamięć podręczną. */
 
-const VERSION = "2026-08-24-2305";
+const VERSION = "2026-10-30-2349";
 const CACHE = "carthago-" + VERSION;
 
 const PRECACHE = [
@@ -13,6 +13,8 @@ const PRECACHE = [
   "./icon-maskable-512.png",
   "./apple-touch-icon.png"
 ];
+
+const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
 
 self.addEventListener("install", function (event) {
   event.waitUntil(
@@ -46,6 +48,9 @@ self.addEventListener("fetch", function (event) {
 
   const url = new URL(request.url);
   const sameOrigin = url.origin === self.location.origin;
+
+  // Inne serwisy (np. kurs NBP) zawsze prosto z sieci — z pamięci byłby nieaktualny kurs.
+  if (!sameOrigin && FONT_HOSTS.indexOf(url.hostname) === -1) return;
 
   // Strona: najpierw sieć (świeża wersja po wdrożeniu), offline z pamięci.
   if (request.mode === "navigate") {

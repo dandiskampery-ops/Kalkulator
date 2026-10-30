@@ -60,6 +60,7 @@
   }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
 
   body {
     margin: 0;
@@ -220,6 +221,10 @@
   .ratebox { display: flex; align-items: center; gap: 5px; min-width: 0; }
   .ratebox input { min-height: 46px; }
   .ratebox span { font-size: 14px; color: var(--ink-3); }
+  .withbtn { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .withbtn .btn { min-height: 46px; padding: 10px 14px; }
+  .withbtn .btn:disabled { opacity: .55; cursor: progress; }
+  .hint { font-size: 13px; color: var(--ink-3); }
 
   .rows { display: flex; flex-direction: column; gap: 8px; }
   .row { display: grid; grid-template-columns: minmax(0, 1fr) 118px 42px; gap: 8px; align-items: center; }
@@ -326,6 +331,16 @@
   }
   .totals .pay > span:last-child { font-size: 26px; font-weight: 600; }
   .totals .minor { font-size: 13px; color: var(--ink-3); }
+  .totals.pln { margin-top: 6px; padding-top: 10px; border-top: 1px dashed var(--line); }
+  .totals .plnhead > span:first-child {
+    font-family: var(--display);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .totals .plnhead > span:last-child { font-size: 13px; color: var(--ink-2); }
+  .totals .plnpay > span:last-child { font-size: 20px; font-weight: 600; }
 
   .saving {
     margin: 4px 0 0;
@@ -435,7 +450,7 @@
         <div class="withrate">
           <label class="toggle" id="diToggle">
             <input id="di" type="checkbox">
-            <span class="label">Rabat DI<span class="sub">order type</span></span>
+            <span class="label">Rabat DI<span class="sub">order type · demo</span></span>
           </label>
           <label class="ratebox">
             <input id="diRate" class="num" type="text" inputmode="decimal" aria-label="Rabat DI w procentach"><span>%</span>
@@ -448,6 +463,15 @@
           </label>
           <label class="ratebox">
             <input id="ciRate" class="num" type="text" inputmode="decimal" aria-label="Rabat CI w procentach"><span>%</span>
+          </label>
+        </div>
+        <div class="withrate">
+          <label class="toggle" id="bonusToggle">
+            <input id="bonus" type="checkbox">
+            <span class="label">Quality Bonus<span class="sub">Malibu 2%</span></span>
+          </label>
+          <label class="ratebox">
+            <input id="bonusRate" class="num" type="text" inputmode="decimal" aria-label="Quality Bonus w procentach"><span>%</span>
           </label>
         </div>
       </div>
@@ -520,7 +544,7 @@
         <input id="skonto" type="checkbox" checked>
         <span class="label">Płatność w 14 dni<span class="sub">skonto od całości po rabatach</span></span>
       </label>
-      <div class="trio">
+      <div class="duo">
         <label class="field">
           <span>Skonto [%]</span>
           <input id="skontoRate" class="num" type="text" inputmode="decimal">
@@ -529,13 +553,23 @@
           <span>VAT [%] · 0 = WDT</span>
           <input id="vat" class="num" type="text" inputmode="decimal">
         </label>
+      </div>
+      <div class="duo">
         <label class="field">
-          <span>Waluta</span>
+          <span>Waluta cennika</span>
           <select id="currency">
             <option value="EUR">EUR</option>
             <option value="PLN">PLN</option>
           </select>
         </label>
+        <div class="field" id="eurPlnField">
+          <span>Kurs EUR/PLN</span>
+          <div class="withbtn">
+            <input id="eurPln" class="num" type="text" inputmode="decimal" placeholder="np. 4,2500" aria-label="Kurs EUR/PLN">
+            <button class="btn ghost" type="button" id="nbp" title="Pobierz ostatni kurs średni EUR z tabeli A NBP">NBP</button>
+          </div>
+          <small class="hint" id="eurPlnInfo"></small>
+        </div>
       </div>
     </section>
   </div>
@@ -553,6 +587,7 @@
         </table>
       </div>
       <div class="totals" id="totals"></div>
+      <div class="totals pln" id="plnTotals" hidden></div>
       <p class="saving" id="saving"></p>
       <div class="btns editor">
         <button class="btn solid" type="button" id="print">Drukuj / PDF</button>
@@ -575,13 +610,19 @@
 (function () {
   "use strict";
 
+  // Wybór modelu ustawia rabaty jak na fakturach tej marki. Carthago: tylko rabat
+  // modelowy (DI i CI zostają, jak je ustawiono). Malibu (faktura 200/31139): rabat
+  // modelowy 10% + Quality Bonus 2% + rabat demo 3% (order type, Sales Type VW3),
+  // bez rabatu CI. insurance — domyślna kwota insurance allowance tej marki.
   var MODELS = [
-    { id: "c1-tourer", label: "C1-Tourer", discount: 10 },
-    { id: "c2-tourer", label: "C2-Tourer", discount: 11 },
-    { id: "c-line", label: "Chic C-Line (T / I Integra)", discount: 11 },
-    { id: "e-line", label: "Chic E-Line", discount: 12 },
-    { id: "s-plus", label: "Chic S-Plus", discount: 12 },
-    { id: "inny", label: "Inny model (rabat ręcznie)", discount: 0 }
+    { id: "c1-tourer", brand: "Carthago", label: "C1-Tourer", discount: 10, insurance: "18,50" },
+    { id: "c2-tourer", brand: "Carthago", label: "C2-Tourer", discount: 11, insurance: "18,50" },
+    { id: "c-line", brand: "Carthago", label: "Chic C-Line (T / I Integra)", discount: 11, insurance: "18,50" },
+    { id: "e-line", brand: "Carthago", label: "Chic E-Line", discount: 12, insurance: "18,50" },
+    { id: "s-plus", brand: "Carthago", label: "Chic S-Plus", discount: 12, insurance: "18,50" },
+    { id: "malibu-i", brand: "Malibu", label: "Malibu I", discount: 10, bonus: 2, di: 3, ci: false, insurance: "25,00" },
+    { id: "malibu-t", brand: "Malibu", label: "Malibu T", discount: 10, bonus: 2, di: 3, ci: false, insurance: "25,00" },
+    { id: "inny", brand: "", label: "Inny model (rabat ręcznie)", discount: 0 }
   ];
 
   // Polska akcyza: 3,1% dla pojemności do 2000 cm3, 18,6% powyżej.
@@ -603,6 +644,8 @@
     diRate: "3",
     ci: false,
     ciRate: "3",
+    bonus: false,
+    bonusRate: "2",
     specialDiscount: "",
     specialMode: "amount",
     packageDiscount: "15",
@@ -619,6 +662,8 @@
     transport: false,
     transportRate: "1100",
     currency: "EUR",
+    eurPln: "",
+    eurPlnSource: "",
     vat: "0",
     skonto: true,
     skontoRate: "2"
@@ -649,36 +694,54 @@
 
   var el = {};
   ["model", "priceMode", "basePrice", "baseDiscount", "di", "diRate", "ci", "ciRate",
+   "bonus", "bonusRate",
    "specialDiscount", "specialMode", "effDiscount", "baseNet",
    "packageDiscount", "packageRows", "packagesNet", "addPackage",
    "optionDiscount", "optionRows", "optionsNet", "addOption",
    "costRows", "costsNet", "addCost", "chassis", "exciseRate",
    "transport", "transportRate",
-   "currency", "vat", "skonto", "skontoRate",
-   "diToggle", "ciToggle", "transportToggle", "skontoToggle",
-   "sumBody", "totals", "saving", "stamp", "barNet", "barGross", "print", "reset"]
+   "currency", "eurPln", "eurPlnField", "eurPlnInfo", "nbp", "vat", "skonto", "skontoRate",
+   "diToggle", "ciToggle", "bonusToggle", "transportToggle", "skontoToggle",
+   "sumBody", "totals", "plnTotals", "saving", "stamp", "barNet", "barGross", "print", "reset"]
   .forEach(function (id) { el[id] = document.getElementById(id); });
 
-  function num(v) {
-    var n = parseFloat(String(v === undefined || v === null ? "" : v).replace(/\s/g, "").replace(",", "."));
+  // Liczby wpisane po polsku (130 630,50), po niemiecku jak na fakturach Carthago
+  // (130.630,50) albo po angielsku (130,630.50); wklejone „€” czy „EUR” są pomijane.
+  // Przy dwóch rodzajach separatorów dziesiętny jest ten ostatni. W kwotach (amount)
+  // sama kropka z trzema cyframi za nią to separator tysięcy: 130.630 = 130 630.
+  function parse(v, amount) {
+    var s = String(v === undefined || v === null ? "" : v).replace(/[^\d.,-]/g, "");
+    var comma = s.lastIndexOf(","), dot = s.lastIndexOf(".");
+    if (comma >= 0 && dot >= 0) {
+      s = comma > dot ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+    } else if (comma >= 0) {
+      s = s.indexOf(",") === comma ? s.replace(",", ".") : s.replace(/,/g, "");
+    } else if (dot >= 0 && (s.indexOf(".") !== dot || (amount && /^-?\d{1,3}\.\d{3}$/.test(s)))) {
+      s = s.replace(/\./g, "");
+    }
+    var n = parseFloat(s);
     return isFinite(n) && n > 0 ? n : 0;
   }
 
+  function num(v) { return parse(v, true); }
+
   function pct(v) {
-    var n = num(v);
+    var n = parse(v, false);
     return n > 100 ? 100 : n;
   }
 
+  // Zaokrąglenie handlowe do groszy, jak na fakturach: 4,145 → 4,15. toPrecision
+  // usuwa błąd zapisu binarnego (41,45 × 10% daje w JS 4,14499…, a nie 4,145).
   function round(v) {
     var n = typeof v === "number" ? v : num(v);
     if (!isFinite(n)) n = 0;
-    return Math.round((n + Number.EPSILON) * 100) / 100;
+    return Math.round(parseFloat((n * 100).toPrecision(12))) / 100;
   }
 
-  function money(v) {
+  function money(v, currency) {
     return new Intl.NumberFormat("pl-PL", {
       style: "currency",
-      currency: state.currency,
+      currency: currency || state.currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(round(v));
@@ -688,12 +751,63 @@
     return new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 2 }).format(round(v)) + "%";
   }
 
+  function rateText(v) {
+    return new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(v);
+  }
+
+  // Kurs EUR/PLN — tylko gdy ceny są w euro; 0 = bez przeliczenia na złote.
+  function eurPlnRate() {
+    return state.currency === "EUR" ? parse(state.eurPln, false) : 0;
+  }
+
+  function modelById(id) {
+    return MODELS.filter(function (m) { return m.id === id; })[0];
+  }
+
+  function modelOptionLabel(m) {
+    var parts = [m.discount];
+    if (m.bonus) parts.push(m.bonus);
+    if (m.di) parts.push(m.di);
+    var total = parts.reduce(function (a, p) { return a + p; }, 0);
+    if (!total) return m.label;
+    return m.label + " — " + total + "%" + (parts.length > 1 ? " (" + parts.join(" + ") + ")" : "");
+  }
+
+  // Ustawia rabaty z faktur wybranej marki. DI i CI ustawione przez Malibu wracają
+  // do wartości domyślnych po przejściu na model, który ich nie określa.
+  function applyModel(m, prev) {
+    if (m.discount > 0) state.baseDiscount = String(m.discount);
+    state.bonus = !!m.bonus;
+    if (m.bonus) state.bonusRate = String(m.bonus);
+    if (m.di !== undefined) {
+      state.di = m.di > 0;
+      if (m.di > 0) state.diRate = String(m.di);
+    } else if (prev && prev.di !== undefined) {
+      state.di = defaults.di;
+      state.diRate = defaults.diRate;
+    }
+    if (m.ci !== undefined) state.ci = m.ci;
+    else if (prev && prev.ci !== undefined) state.ci = defaults.ci;
+    // Insurance allowance różni się między markami (18,50 / 25,00 €) — podmieniamy
+    // tylko kwotę pustą albo domyślną poprzedniej marki, ręcznie wpisana zostaje.
+    if (m.insurance) {
+      state.costs.forEach(function (k) {
+        if (!/^Insurance allowance/.test(k.name)) return;
+        if (!num(k.price) || (prev && prev.insurance && num(k.price) === num(prev.insurance))) {
+          k.price = m.insurance;
+        }
+      });
+    }
+  }
+
   // Rabaty procentowe na pojazd bazowy liczone są od ceny katalogowej i sumowane
-  // (na fakturach Carthago: model range discount + order type discount DI + CI discount).
+  // (na fakturach: model range discount + order type discount DI + CI discount
+  // + Quality Bonus).
   function effectiveBaseDiscount() {
     var sum = pct(state.baseDiscount) +
       (state.di ? pct(state.diRate) : 0) +
-      (state.ci ? pct(state.ciRate) : 0);
+      (state.ci ? pct(state.ciRate) : 0) +
+      (state.bonus ? pct(state.bonusRate) : 0);
     return sum > 100 ? 100 : sum;
   }
 
@@ -733,12 +847,13 @@
     var discModel = round(baseList * pct(state.baseDiscount) / 100);
     var discDi = state.di ? round(baseList * pct(state.diRate) / 100) : 0;
     var discCi = state.ci ? round(baseList * pct(state.ciRate) / 100) : 0;
+    var discBonus = state.bonus ? round(baseList * pct(state.bonusRate) / 100) : 0;
     // Rabat specjalny (special discount) wpisywany kwotowo albo procentowo.
     var specialRaw = state.specialMode === "percent"
       ? round(baseList * pct(state.specialDiscount) / 100)
       : num(state.specialDiscount);
-    var special = Math.min(specialRaw, baseList - discModel - discDi - discCi);
-    var baseNet = baseList - discModel - discDi - discCi - special;
+    var special = Math.min(specialRaw, baseList - discModel - discDi - discCi - discBonus);
+    var baseNet = baseList - discModel - discDi - discCi - discBonus - special;
 
     var pkgList = sumItems(state.packages);
     var pkgDisc = pct(state.packageDiscount);
@@ -769,7 +884,23 @@
     var vatRate = pct(state.vat);
     var vat = round(net * vatRate / 100);
 
+    // Przeliczenie na złote: każda pozycja osobno do groszy, suma z przeliczonych pozycji.
+    var pln = null;
+    var eurPln = eurPlnRate();
+    if (eurPln > 0) {
+      var invoicePln = round(invoiceNet * eurPln);
+      var excisePln = round(excise * eurPln);
+      var transportPln = round(transport * eurPln);
+      var netPln = invoicePln + excisePln + transportPln;
+      var vatPln = round(vat * eurPln);
+      pln = {
+        rate: eurPln, invoice: invoicePln, excise: excisePln, transport: transportPln,
+        net: netPln, vat: vatPln, gross: netPln + vatPln
+      };
+    }
+
     return {
+      pln: pln,
       baseList: baseList, baseDisc: baseDisc, baseNet: baseNet, special: special,
       pkgList: pkgList, pkgDisc: pkgDisc, pkgNet: pkgNet,
       optList: optList, optDisc: optDisc, optNet: optNet,
@@ -865,12 +996,13 @@
     var body = el.sumBody;
     body.textContent = "";
 
-    var model = MODELS.filter(function (m) { return m.id === state.model; })[0];
+    var model = modelById(state.model);
     body.appendChild(sumRow(model ? model.label : "Pojazd", c.baseList, c.baseDisc, c.baseNet, "head"));
 
     var extras = [];
-    if (state.di) extras.push("DI " + percent(state.diRate));
-    if (state.ci) extras.push("CI " + percent(state.ciRate));
+    if (state.bonus) extras.push("Quality Bonus " + percent(pct(state.bonusRate)));
+    if (state.di) extras.push("DI " + percent(pct(state.diRate)));
+    if (state.ci) extras.push("CI " + percent(pct(state.ciRate)));
     if (c.special > 0) {
       extras.push("rabat specjalny " + (state.specialMode === "percent"
         ? percent(pct(state.specialDiscount)) + " (" + money(c.special) + ")"
@@ -934,24 +1066,31 @@
     if (c.transport > 0) {
       lines.push({ label: "Transport do Polski", value: "+ " + money(c.transport) });
     }
-    lines.push({ label: hasExtras ? "Koszt auta netto" : "Do zapłaty netto", value: money(c.net), cls: "pay" });
+    var payLabel = hasExtras ? "Koszt auta netto" : "Do zapłaty netto";
+    lines.push({ label: payLabel, value: money(c.net), cls: "pay" });
     if (c.vatRate > 0) {
       lines.push({ label: "VAT " + percent(c.vatRate), value: money(c.vat), cls: "minor" });
       lines.push({ label: "Do zapłaty brutto", value: money(c.gross), cls: "minor" });
     }
+    renderLines(el.totals, lines);
 
-    el.totals.textContent = "";
-    lines.forEach(function (line) {
-      var div = document.createElement("div");
-      div.className = "t" + (line.cls ? " " + line.cls : "");
-      var a = document.createElement("span");
-      a.textContent = line.label;
-      var b = document.createElement("span");
-      b.textContent = line.value;
-      div.appendChild(a);
-      div.appendChild(b);
-      el.totals.appendChild(div);
-    });
+    var plnLines = [];
+    if (c.pln) {
+      plnLines.push({ label: "W złotych", value: "1 EUR = " + rateText(c.pln.rate) + " zł", cls: "plnhead" });
+      if (state.eurPlnSource) plnLines.push({ label: state.eurPlnSource, value: "", cls: "minor" });
+      if (hasExtras) {
+        plnLines.push({ label: "Faktura po skoncie", value: money(c.pln.invoice, "PLN") });
+        if (c.excise > 0) plnLines.push({ label: "Akcyza " + percent(c.exciseRate), value: "+ " + money(c.pln.excise, "PLN") });
+        if (c.transport > 0) plnLines.push({ label: "Transport do Polski", value: "+ " + money(c.pln.transport, "PLN") });
+      }
+      plnLines.push({ label: payLabel, value: money(c.pln.net, "PLN"), cls: "plnpay" });
+      if (c.vatRate > 0) {
+        plnLines.push({ label: "VAT " + percent(c.vatRate), value: money(c.pln.vat, "PLN"), cls: "minor" });
+        plnLines.push({ label: "Do zapłaty brutto", value: money(c.pln.gross, "PLN"), cls: "minor" });
+      }
+    }
+    renderLines(el.plnTotals, plnLines);
+    el.plnTotals.hidden = !c.pln;
 
     el.saving.textContent = c.listTotal > 0
       ? "Rabaty i skonto razem: " + money(c.saving) + " — " + percent(c.saving / c.listTotal * 100) + " wartości katalogowej."
@@ -964,24 +1103,65 @@
     el.optionsNet.textContent = money(c.optNet);
     el.costsNet.textContent = money(c.costsTotal);
     el.barNet.textContent = money(c.net);
-    el.barGross.textContent = c.vatRate > 0
-      ? "brutto " + money(c.gross)
-      : (c.excise > 0 ? "w tym akcyza " + money(c.excise) : "przed skontem " + money(c.subtotal));
+    el.barGross.textContent = c.pln
+      ? "w złotych " + money(c.pln.net, "PLN")
+      : c.vatRate > 0
+        ? "brutto " + money(c.gross)
+        : (c.excise > 0 ? "w tym akcyza " + money(c.excise) : "przed skontem " + money(c.subtotal));
+
+    el.eurPlnField.hidden = state.currency !== "EUR";
+    el.eurPlnInfo.textContent = state.eurPlnSource
+      ? state.eurPlnSource
+      : (c.pln ? "kurs wpisany ręcznie" : "puste = bez przeliczenia na złote");
 
     el.diToggle.classList.toggle("on", state.di);
     el.ciToggle.classList.toggle("on", state.ci);
+    el.bonusToggle.classList.toggle("on", state.bonus);
     el.transportToggle.classList.toggle("on", state.transport);
     el.skontoToggle.classList.toggle("on", state.skonto);
   }
 
-  function fillInputs() {
-    el.model.textContent = "";
+  function renderLines(container, lines) {
+    container.textContent = "";
+    lines.forEach(function (line) {
+      var div = document.createElement("div");
+      div.className = "t" + (line.cls ? " " + line.cls : "");
+      var a = document.createElement("span");
+      a.textContent = line.label;
+      var b = document.createElement("span");
+      b.textContent = line.value;
+      div.appendChild(a);
+      div.appendChild(b);
+      container.appendChild(div);
+    });
+  }
+
+  function buildSelects() {
+    var groups = {};
     MODELS.forEach(function (m) {
       var opt = document.createElement("option");
       opt.value = m.id;
-      opt.textContent = m.discount > 0 ? m.label + " — " + m.discount + "%" : m.label;
-      el.model.appendChild(opt);
+      opt.textContent = modelOptionLabel(m);
+      if (!m.brand) {
+        el.model.appendChild(opt);
+        return;
+      }
+      if (!groups[m.brand]) {
+        groups[m.brand] = document.createElement("optgroup");
+        groups[m.brand].label = m.brand;
+        el.model.appendChild(groups[m.brand]);
+      }
+      groups[m.brand].appendChild(opt);
     });
+    CHASSIS.forEach(function (ch) {
+      var opt = document.createElement("option");
+      opt.value = ch.id;
+      opt.textContent = ch.rate === "0" ? ch.label : ch.label + " — " + ch.rate + "%";
+      el.chassis.appendChild(opt);
+    });
+  }
+
+  function fillInputs() {
     el.model.value = state.model;
     el.priceMode.value = state.priceMode;
     el.basePrice.value = state.basePrice;
@@ -990,22 +1170,18 @@
     el.diRate.value = state.diRate;
     el.ci.checked = state.ci;
     el.ciRate.value = state.ciRate;
+    el.bonus.checked = state.bonus;
+    el.bonusRate.value = state.bonusRate;
     el.specialDiscount.value = state.specialDiscount;
     el.specialMode.value = state.specialMode;
     el.packageDiscount.value = state.packageDiscount;
     el.optionDiscount.value = state.optionDiscount;
-    el.chassis.textContent = "";
-    CHASSIS.forEach(function (ch) {
-      var opt = document.createElement("option");
-      opt.value = ch.id;
-      opt.textContent = ch.rate === "0" ? ch.label : ch.label + " — " + ch.rate + "%";
-      el.chassis.appendChild(opt);
-    });
     el.chassis.value = state.chassis;
     el.exciseRate.value = state.exciseRate;
     el.transport.checked = state.transport;
     el.transportRate.value = state.transportRate;
     el.currency.value = state.currency;
+    el.eurPln.value = state.eurPln;
     el.vat.value = state.vat;
     el.skonto.checked = state.skonto;
     el.skontoRate.value = state.skontoRate;
@@ -1023,13 +1199,12 @@
   }
 
   el.model.addEventListener("change", function () {
+    var prev = modelById(state.model);
+    var m = modelById(el.model.value);
     state.model = el.model.value;
-    var m = MODELS.filter(function (x) { return x.id === state.model; })[0];
-    if (m && m.discount > 0) {
-      state.baseDiscount = String(m.discount);
-      el.baseDiscount.value = state.baseDiscount;
-    }
+    if (m) applyModel(m, prev);
     save();
+    fillInputs();
     render();
   });
 
@@ -1040,6 +1215,8 @@
   bind(el.diRate, "diRate");
   bind(el.ci, "ci", true);
   bind(el.ciRate, "ciRate");
+  bind(el.bonus, "bonus", true);
+  bind(el.bonusRate, "bonusRate");
   bind(el.specialDiscount, "specialDiscount");
   bind(el.specialMode, "specialMode");
   bind(el.exciseRate, "exciseRate");
@@ -1060,6 +1237,38 @@
   bind(el.optionDiscount, "optionDiscount");
   bind(el.currency, "currency");
   bind(el.vat, "vat");
+
+  // Kurs wpisany ręcznie nie jest już kursem z tabeli NBP.
+  el.eurPln.addEventListener("input", function () {
+    state.eurPln = el.eurPln.value;
+    state.eurPlnSource = "";
+    save();
+    render();
+  });
+
+  // Ostatni kurs średni EUR z tabeli A NBP (publikowana w dni robocze ok. 12:00).
+  el.nbp.addEventListener("click", function () {
+    el.nbp.disabled = true;
+    el.eurPlnInfo.textContent = "Pobieram kurs NBP…";
+    fetch("https://api.nbp.pl/api/exchangerates/rates/a/eur/?format=json", { cache: "no-store" })
+      .then(function (response) {
+        if (!response.ok) throw new Error("NBP " + response.status);
+        return response.json();
+      })
+      .then(function (data) {
+        var rate = data.rates[0];
+        state.eurPln = rateText(rate.mid);
+        state.eurPlnSource = "kurs średni NBP, tabela " + rate.no + " z " +
+          rate.effectiveDate.split("-").reverse().join(".");
+        el.eurPln.value = state.eurPln;
+        save();
+        render();
+      })
+      .catch(function () {
+        el.eurPlnInfo.textContent = "Nie udało się pobrać kursu NBP — wpisz go ręcznie.";
+      })
+      .then(function () { el.nbp.disabled = false; });
+  });
   bind(el.skonto, "skonto", true);
   bind(el.skontoRate, "skontoRate");
 
@@ -1091,6 +1300,7 @@
     render();
   });
 
+  buildSelects();
   fillInputs();
   render();
 })();
