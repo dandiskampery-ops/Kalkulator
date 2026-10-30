@@ -1,6 +1,6 @@
 # Kalkulator cen samochodów kempingowych Carthago
 
-Jednoplikowy kalkulator ceny pojazdu Carthago (`kalkulator.html`) — rabaty
+Jednoplikowy kalkulator ceny pojazdu Carthago i Malibu (`kalkulator.html`) — rabaty
 modelowe, rabaty na pakiety i opcje, koszty dodatkowe oraz skonto za płatność w
 terminie 14 dni. Ten sam układ obsługuje telefon (jedna kolumna, kwota „Do
 zapłaty netto” przyklejona do dolnej krawędzi ekranu) i komputer (formularz plus
@@ -8,7 +8,8 @@ kalkulacja przyklejona z prawej strony), w jasnym i ciemnym motywie.
 
 Zasady liczenia odtworzone są z faktur Carthago **200/56721** (e-line I 64 XL QB,
 Sales Type DI2) i **200/56533** (C2-Tourer I 147 RB-LE, Sales Type DI0) wraz z
-towarzyszącymi im potwierdzeniami zamówień.
+towarzyszącymi im potwierdzeniami zamówień, a dla Malibu z faktury **200/31139**
+(Malibu I 470 RB-LE „K”, Sales Type VW3).
 
 ## Uruchomienie
 
@@ -100,6 +101,7 @@ pełnych groszy — tak jak na fakturze.
 | Rabat modelowy | *Model range discount* / *Basic discount* | wg modelu (tabela niżej) |
 | Rabat DI | *Order type discount* | wg Sales Type: DI0 = 0%, DI2 = 2% |
 | Rabat CI | *CI discount* | 3% |
+| Quality Bonus | *Quality Bonus* | 2% (Malibu) |
 | Rabat specjalny | *Special discount* | wpisywany ręcznie — kwotowo albo procentowo |
 
 | Model | Rabat modelowy |
@@ -109,7 +111,15 @@ pełnych groszy — tak jak na fakturze.
 | Chic C-Line (T / I Integra) | 11% |
 | Chic E-Line | 12% |
 | Chic S-Plus | 12% |
+| Malibu I | 10% + Quality Bonus 2% + rabat demo (DI) 3% = 15% |
+| Malibu T | 10% + Quality Bonus 2% + rabat demo (DI) 3% = 15% |
 | Inny model | wpisywany ręcznie |
+
+Wybór modelu Malibu ustawia od razu pełny zestaw rabatów z faktury 200/31139:
+rabat modelowy 10%, Quality Bonus 2% i rabat demo 3% (*Order type discount*,
+Sales Type VW3) — bez rabatu CI — oraz insurance allowance 25,00 €. Po powrocie
+do modelu Carthago Quality Bonus się wyłącza, DI i CI wracają do ustawień
+domyślnych, a insurance do 18,50 € (kwota wpisana ręcznie zostaje).
 
 Stawki DI i CI są edytowalne przy przełącznikach — na fakturach rabat DI zależy
 od typu sprzedaży (Sales Type), a CI wynosi 3%. Rabat specjalny ma obok pola
@@ -130,7 +140,7 @@ Pozycje doliczane do faktury Carthago w pełnej wysokości, bez rabatu, ale
 |---|---|---|
 | Prior carriage charges | *Subtotal transport* (poz. 100002) | np. 407,29 lub 603,57 € |
 | Delivery costs | *Subtotal transport cost* (poz. 100005) | np. 0,00 lub 729,30 € |
-| Insurance allowance | *Insurance allowance* (poz. 100007) | 18,50 € na obu fakturach |
+| Insurance allowance | *Insurance allowance* (poz. 100007) | 18,50 € Carthago, 25,00 € Malibu |
 
 Trzy pozycje są wpisane domyślnie — wystarczy uzupełnić kwoty z faktury.
 
@@ -161,7 +171,7 @@ Polski.
 ## Kolejność wyliczeń
 
 ```
-1. Pojazd netto   = cena katalogowa − rabat modelowy − DI − CI − rabat specjalny
+1. Pojazd netto   = cena katalogowa − rabat modelowy − DI − CI − Quality Bonus − rabat specjalny
 2. Pakiety netto  = suma pozycji pomniejszonych o 15% (każda osobno)
 3. Opcje netto    = suma pozycji pomniejszonych o 18% (każda osobno)
 4. Po rabatach    = 1 + 2 + 3
@@ -172,9 +182,11 @@ Polski.
 9. Cena po akcyzie = Faktura po skoncie + akcyza
 10. Koszt auta    = Cena po akcyzie + transport do Polski (jeśli włączony)
 11. VAT (domyślnie 0% — dostawa wewnątrzwspólnotowa) i brutto od kwoty końcowej
+12. W złotych (gdy wpisany kurs) = faktura po skoncie, akcyza i transport
+    przeliczone po kursie EUR/PLN, każda pozycja osobno
 
-Kwoty skonta, akcyzy i VAT zaokrąglane są do groszy przed dodaniem, tak jak na
-fakturze.
+Kwoty rabatów, skonta, akcyzy i VAT zaokrąglane są handlowo do groszy przed
+dodaniem (4,145 → 4,15), tak jak na fakturze.
 ```
 
 ## Sprawdzenie na fakturach
@@ -197,6 +209,21 @@ konfiguracji, tryb cennika „brutto z VAT 23%”:
 Faktura **200/56721** (e-line I 64 XL QB, DI2): rabaty na pojeździe 12% + DI 2% +
 CI 3% + rabat specjalny 3 353,66 € dają 135 067,40 € — zgodnie z fakturą.
 
+Faktura **200/31139** (Malibu I 470 RB-LE „K”, VW3), model „Malibu I”, pozycje
+wpisane cenami brutto z potwierdzenia zamówienia, tryb „brutto z VAT 23%”:
+
+| Pozycja | Kalkulator | Faktura |
+|---|---:|---:|
+| Pojazd po rabatach (10% + Quality Bonus 2% + demo 3%) | 87 439,43 | 87 439,43 |
+| Pakiety po rabacie 15% | 16 008,34 | 16 008,34 |
+| Opcje po rabacie 18% | 3 319,99 | 3 319,99 |
+| Wartość katalogowa netto | 125 752,03 | 125 752,03 |
+| Rabaty razem | 18 984,27 | 18 984,27 |
+| Koszty z faktury (603,57 + 729,30 + 25,00) | 1 357,87 | 1 357,87 |
+| Suma faktury netto | 108 125,63 | 108 125,63 |
+| Skonto 2% | 2 162,51 | 2 162,51 |
+| **Do zapłaty netto** | **105 963,12** | **105 963,12** |
+
 Dalszy ciąg kalkulacji dla pierwszego przykładu (Mercedes-Benz, transport
 włączony): 110 277,70 + akcyza 3,1% (3 418,61) = 113 696,31, plus transport
 1 100,00 → **114 796,31 €**. Dla podwozia Fiat lub Iveco (18,6%): akcyza
@@ -204,10 +231,17 @@ włączony): 110 277,70 + akcyza 3,1% (3 418,61) = 113 696,31, plus transport
 
 ## Pozostałe funkcje
 
-* Waluta **EUR / PLN** oraz edytowalna stawka VAT (0% = dostawa
+* Waluta cennika **EUR / PLN** oraz edytowalna stawka VAT (0% = dostawa
   wewnątrzwspólnotowa; wiersze VAT i brutto pojawiają się dopiero przy stawce
   większej od zera).
-* Kwoty można wpisywać po polsku — `130 630` i `18 626,03` działają tak samo.
+* **Kurs EUR/PLN** — po wpisaniu kursu kalkulacja pokazuje dodatkowo sekcję
+  „W złotych” (faktura po skoncie, akcyza, transport i koszt auta), a pasek na
+  telefonie kwotę w złotych. Przycisk **NBP** pobiera ostatni kurs średni EUR z
+  tabeli A NBP i zapisuje numer tabeli oraz datę (widoczne też na wydruku). Puste
+  pole = bez przeliczenia.
+* Kwoty można wpisywać po polsku, po niemiecku jak na fakturach i po angielsku —
+  `130 630`, `130.630,00`, `130,630.00` i `18 626,03` działają poprawnie;
+  wklejone „€” czy „EUR” są pomijane.
 * Pole ceny pojazdu nazywa się po prostu „Cena katalogowa” — o tym, czy kwota
   jest netto czy brutto, decyduje przełącznik „Ceny z cennika”.
 * Przycisk **Drukuj / PDF** — wydruk zawiera samo podsumowanie oferty z datą,
