@@ -1,7 +1,7 @@
 /* Service worker kalkulatora Carthago.
    Wersję stempluje build.py — każda kompilacja tworzy nową pamięć podręczną. */
 
-const VERSION = "2026-10-30-2349";
+const VERSION = "2026-10-31-0001";
 const CACHE = "carthago-" + VERSION;
 
 const PRECACHE = [

@@ -6,10 +6,11 @@ terminie 14 dni. Ten sam układ obsługuje telefon (jedna kolumna, kwota „Do
 zapłaty netto” przyklejona do dolnej krawędzi ekranu) i komputer (formularz plus
 kalkulacja przyklejona z prawej strony), w jasnym i ciemnym motywie.
 
-Zasady liczenia odtworzone są z faktur Carthago **200/56721** (e-line I 64 XL QB,
-Sales Type DI2) i **200/56533** (C2-Tourer I 147 RB-LE, Sales Type DI0) wraz z
-towarzyszącymi im potwierdzeniami zamówień, a dla Malibu z faktury **200/31139**
-(Malibu I 470 RB-LE „K”, Sales Type VW3).
+Zasady liczenia odtworzone są z faktur Carthago **200/57964** (chic c-line I 4.9
+LE L, Sales Type DI4, rok modelowy 2027) oraz starszych **200/56721** (e-line I 64
+XL QB, DI2) i **200/56533** (C2-Tourer I 147 RB-LE, DI0), a dla Malibu z faktury
+**200/31139** (Malibu I 470 RB-LE „K”, Sales Type VW3) — wraz z towarzyszącymi im
+potwierdzeniami zamówień.
 
 ## Uruchomienie
 
@@ -99,30 +100,29 @@ pełnych groszy — tak jak na fakturze.
 | Rabat | Nazwa na fakturze | Stawka |
 |---|---|---|
 | Rabat modelowy | *Model range discount* / *Basic discount* | wg modelu (tabela niżej) |
-| Rabat DI | *Order type discount* | wg Sales Type: DI0 = 0%, DI2 = 2% |
-| Rabat CI | *CI discount* | 3% |
-| Quality Bonus | *Quality Bonus* | 2% (Malibu) |
+| Rabat DI | *Order type discount* (*Dispo-* / *Demo Discount*) | wg Sales Type: DI0 = 0%, DI2 = 2%, DI4 (dispo) = 4%, VW3 (demo) = 3% |
+| Rabat CI | *CI discount* | 3% — tylko na starszych fakturach Carthago, domyślnie wyłączony |
+| Quality Bonus | *Quality Bonus* | Carthago 3%, Malibu 2% |
 | Rabat specjalny | *Special discount* | wpisywany ręcznie — kwotowo albo procentowo |
 
-| Model | Rabat modelowy |
-|---|---|
-| C1-Tourer | 10% |
-| C2-Tourer | 11% |
-| Chic C-Line (T / I Integra) | 11% |
-| Chic E-Line | 12% |
-| Chic S-Plus | 12% |
-| Malibu I | 10% + Quality Bonus 2% + rabat demo (DI) 3% = 15% |
-| Malibu T | 10% + Quality Bonus 2% + rabat demo (DI) 3% = 15% |
-| Inny model | wpisywany ręcznie |
+| Model | Rabat modelowy | Quality Bonus | Rabat DI | Razem |
+|---|---:|---:|---:|---:|
+| C1-Tourer | 10% | 3% | 4% (dispo) | 17% |
+| C2-Tourer | 11% | 3% | 4% (dispo) | 18% |
+| Chic C-Line (T / I Integra) | 11% | 3% | 4% (dispo) | 18% |
+| Chic E-Line | 12% | 3% | 4% (dispo) | 19% |
+| Chic S-Plus | 12% | 3% | 4% (dispo) | 19% |
+| Malibu I | 10% | 2% | 3% (demo) | 15% |
+| Malibu T | 10% | 2% | 3% (demo) | 15% |
+| Inny model | ręcznie | — | — | — |
 
-Wybór modelu Malibu ustawia od razu pełny zestaw rabatów z faktury 200/31139:
-rabat modelowy 10%, Quality Bonus 2% i rabat demo 3% (*Order type discount*,
-Sales Type VW3) — bez rabatu CI — oraz insurance allowance 25,00 €. Po powrocie
-do modelu Carthago Quality Bonus się wyłącza, DI i CI wracają do ustawień
-domyślnych, a insurance do 18,50 € (kwota wpisana ręcznie zostaje).
+Wybór modelu ustawia od razu pełny zestaw rabatów z faktur tej marki — Carthago
+jak na 200/57964, Malibu jak na 200/31139 — i wyłącza rabat CI, którego na tych
+fakturach nie ma. „Inny model” niczego nie zmienia: rabaty wpisuje się ręcznie.
 
-Stawki DI i CI są edytowalne przy przełącznikach — na fakturach rabat DI zależy
-od typu sprzedaży (Sales Type), a CI wynosi 3%. Rabat specjalny ma obok pola
+Stawki DI, CI i Quality Bonus są edytowalne przy przełącznikach — rabat DI
+zależy od typu sprzedaży (Sales Type), więc dla innego typu zamówienia wystarczy
+zmienić stawkę albo wyłączyć przełącznik. Rabat specjalny ma obok pola
 wybór jednostki: **kwota** albo **%** (procent liczony od ceny katalogowej
 netto).
 
@@ -133,16 +133,19 @@ netto).
 
 ### Koszty z faktury (bez rabatu, w skoncie)
 
-Pozycje doliczane do faktury Carthago w pełnej wysokości, bez rabatu, ale
-**wchodzące do podstawy skonta**:
+Pozycje doliczane do faktury Carthago i Malibu w pełnej wysokości, bez rabatu,
+ale **wchodzące do podstawy skonta**:
 
-| Pozycja | Nazwa na fakturze | Uwagi |
-|---|---|---|
-| Prior carriage charges | *Subtotal transport* (poz. 100002) | np. 407,29 lub 603,57 € |
-| Delivery costs | *Subtotal transport cost* (poz. 100005) | np. 0,00 lub 729,30 € |
-| Insurance allowance | *Insurance allowance* (poz. 100007) | 18,50 € Carthago, 25,00 € Malibu |
+| Pozycja | Nazwa na fakturze | Kwota domyślna |
+|---|---|---:|
+| Prior carriage charges | *Subtotal transport* (poz. 100002) | 603,57 € |
+| Delivery costs | *Subtotal transport cost* (poz. 100005) | 729,30 € |
+| Insurance allowance | *Insurance allowance* (poz. 100007) | 25,00 € |
 
-Trzy pozycje są wpisane domyślnie — wystarczy uzupełnić kwoty z faktury.
+Kwoty są takie same na fakturach Carthago 200/57964 i Malibu 200/31139 i są
+wpisane domyślnie; można je zmienić albo usunąć (np. przy odbiorze w fabryce).
+W kalkulacjach zapisanych w starszej wersji kalkulatora puste pola i dawne
+18,50 € zostają raz uzupełnione tymi kwotami — kwoty wpisane ręcznie zostają.
 
 ### Podatek akcyzowy
 
@@ -191,6 +194,25 @@ dodaniem (4,145 → 4,15), tak jak na fakturze.
 
 ## Sprawdzenie na fakturach
 
+Faktura **200/57964** (chic c-line I 4.9 LE L, DI4), model „Chic C-Line”, pozycje
+wpisane cenami brutto z potwierdzenia zamówienia, tryb „brutto z VAT 23%”:
+
+| Pozycja | Kalkulator | Faktura |
+|---|---:|---:|
+| Pojazd po rabatach (11% + Quality Bonus 3% + dispo 4%) | 102 493,33 | 102 493,33 |
+| Pakiety po rabacie 15% | 15 763,00 | 15 763,00 |
+| Opcje po rabacie 18% | 5 020,01 | 5 020,01 |
+| Wartość katalogowa netto | 149 658,53 | 149 658,53 |
+| Rabaty razem | 26 382,19 | 26 382,19 |
+| Koszty z faktury (603,57 + 729,30 + 25,00) | 1 357,87 | 1 357,87 |
+| Suma faktury netto | 124 634,21 | 124 634,21 |
+| Skonto 2% | 2 492,68 | 2 492,68 |
+| **Do zapłaty netto** | **122 141,53** | **122 141,53** |
+
+Starsze faktury Carthago miały rabat CI 3% zamiast Quality Bonus i insurance
+18,50 € — żeby je odtworzyć, trzeba wyłączyć Quality Bonus, ustawić DI według
+Sales Type, włączyć CI i wpisać koszty z faktury:
+
 Faktura **200/56533** (C2-Tourer I 147 RB-LE), pozycje wpisane cenami brutto z
 konfiguracji, tryb cennika „brutto z VAT 23%”:
 
@@ -224,7 +246,7 @@ wpisane cenami brutto z potwierdzenia zamówienia, tryb „brutto z VAT 23%”:
 | Skonto 2% | 2 162,51 | 2 162,51 |
 | **Do zapłaty netto** | **105 963,12** | **105 963,12** |
 
-Dalszy ciąg kalkulacji dla pierwszego przykładu (Mercedes-Benz, transport
+Dalszy ciąg kalkulacji dla faktury 200/56533 (Mercedes-Benz, transport
 włączony): 110 277,70 + akcyza 3,1% (3 418,61) = 113 696,31, plus transport
 1 100,00 → **114 796,31 €**. Dla podwozia Fiat lub Iveco (18,6%): akcyza
 20 511,65 → **131 889,35 €**.
