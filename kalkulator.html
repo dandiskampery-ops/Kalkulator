@@ -513,7 +513,7 @@
     </section>
 
     <section class="card editor">
-      <h2>Koszty z faktury <span class="rate">bez rabatu, w skoncie</span></h2>
+      <h2>Koszty z faktury <span class="rate">w euro · bez rabatu, w skoncie</span></h2>
       <div class="rows" id="costRows"></div>
       <div class="btns"><button class="btn ghost" type="button" id="addCost">+ Dodaj koszt</button></div>
       <div class="sub-line"><span>Koszty z faktury</span><b id="costsNet">—</b></div>
@@ -828,10 +828,9 @@
     return c ? c.label : "";
   }
 
-  // Transport do Polski w euro (cennik w PLN: przeliczony po kursie; bez kursu nie wchodzi
-  // do kwoty — kalkulacja pokazuje, że brakuje kursu).
-  function transportCost(eurPln) {
-    var eur = state.transport ? num(state.transportRate) : 0;
+  // Koszty z faktury i transport do Polski są w euro. Przy cenniku w PLN każda kwota
+  // przeliczana po kursie do groszy; bez kursu 0 — kalkulacja ostrzega o braku kursu.
+  function fromEur(eur, eurPln) {
     return state.currency === "PLN" ? round(eur * eurPln) : eur;
   }
 
@@ -878,12 +877,13 @@
     var optDisc = pct(state.optionDiscount);
     var optNet = sumItemsNet(state.options, optDisc);
 
-    // Koszty z faktury (transport fabryczny, ubezpieczenie) wchodzą do podstawy skonta.
-    var costsTotal = state.costs.reduce(function (a, k) { return a + num(k.price); }, 0);
-    // Transport do Polski nie jest rabatowany ani objęty skontem — dochodzi na końcu.
     var eurPln = eurPlnRate();
+    // Koszty z faktury (transport fabryczny, ubezpieczenie) wchodzą do podstawy skonta.
+    var costsEur = state.costs.reduce(function (a, k) { return a + num(k.price); }, 0);
+    var costsTotal = state.costs.reduce(function (a, k) { return a + fromEur(num(k.price), eurPln); }, 0);
+    // Transport do Polski nie jest rabatowany ani objęty skontem — dochodzi na końcu.
     var transportEur = state.transport ? num(state.transportRate) : 0;
-    var transport = transportCost(eurPln);
+    var transport = fromEur(transportEur, eurPln);
 
     var listTotal = baseList + pkgList + optList;
     var afterDiscounts = baseNet + pkgNet + optNet;
@@ -917,7 +917,7 @@
     }
 
     return {
-      pln: pln, eurPln: eurPln, transportEur: transportEur,
+      pln: pln, eurPln: eurPln, costsEur: costsEur, transportEur: transportEur,
       baseList: baseList, baseDisc: baseDisc, baseNet: baseNet, special: special,
       pkgList: pkgList, pkgDisc: pkgDisc, pkgNet: pkgNet,
       optList: optList, optDisc: optDisc, optNet: optNet,
@@ -981,7 +981,7 @@
       price.inputMode = "decimal";
       price.placeholder = "0,00";
       price.value = item.price;
-      price.setAttribute("aria-label", "Cena katalogowa netto");
+      price.setAttribute("aria-label", kind === "costs" ? "Kwota w euro" : "Cena katalogowa netto");
       price.addEventListener("input", function () {
         state[kind][index].price = price.value;
         save();
@@ -1050,10 +1050,24 @@
       });
     }
 
+    // Cennik w PLN: kwoty w euro przeliczone po kursie; bez kursu nie da się ich doliczyć.
+    var inPln = state.currency === "PLN";
+    var byRate = inPln ? " × " + rateText(c.eurPln) : "";
+    var costsMissing = inPln && c.costsEur > 0 && !c.eurPln;
+    var transportMissing = inPln && c.transportEur > 0 && !c.eurPln;
+
     if (c.costsTotal > 0) {
       body.appendChild(sumRow("Koszty z faktury", c.costsTotal, null, c.costsTotal, "head"));
+      if (inPln) {
+        var rateRow = document.createElement("tr");
+        rateRow.className = "detail";
+        var rateCell = cell("kwoty z faktury w euro: " + money(c.costsEur, "EUR") + byRate);
+        rateCell.colSpan = 4;
+        rateRow.appendChild(rateCell);
+        body.appendChild(rateRow);
+      }
       state.costs.forEach(function (k) {
-        var v = num(k.price);
+        var v = fromEur(num(k.price), c.eurPln);
         if (v > 0) body.appendChild(sumRow(k.name || "Koszt", v, null, v, "item"));
       });
     }
@@ -1064,14 +1078,15 @@
       { label: "Po rabatach netto", value: money(c.afterDiscounts) }
     ];
     if (c.costsTotal > 0) {
-      lines.push({ label: "Koszty z faktury", value: "+ " + money(c.costsTotal) });
+      lines.push({ label: "Koszty z faktury" + (inPln ? " · " + money(c.costsEur, "EUR") + byRate : ""), value: "+ " + money(c.costsTotal) });
       lines.push({ label: "Suma faktury netto", value: money(c.subtotal) });
+    }
+    if (costsMissing) {
+      lines.push({ label: "Koszty z faktury " + money(c.costsEur, "EUR") + " — wpisz kurs EUR/PLN", value: "—", cls: "warn" });
     }
     if (c.skontoRate > 0) {
       lines.push({ label: "Skonto " + percent(c.skontoRate) + " · 14 dni", value: "− " + money(c.skontoAmount), cls: "cut" });
     }
-    // Cennik w PLN bez kursu: transportu w euro nie da się doliczyć.
-    var transportMissing = state.currency === "PLN" && c.transportEur > 0 && !c.eurPln;
     var hasExtras = c.transport > 0 || c.excise > 0 || transportMissing;
     if (hasExtras) {
       lines.push({ label: "Faktura po skoncie", value: money(c.invoiceNet) });
@@ -1084,9 +1099,7 @@
     }
     if (c.transport > 0) {
       lines.push({
-        label: state.currency === "PLN"
-          ? "Transport do Polski · " + money(c.transportEur, "EUR") + " × " + rateText(c.eurPln)
-          : "Transport do Polski",
+        label: "Transport do Polski" + (inPln ? " · " + money(c.transportEur, "EUR") + byRate : ""),
         value: "+ " + money(c.transport)
       });
     }
@@ -1128,7 +1141,9 @@
     el.baseNet.textContent = money(c.baseNet);
     el.packagesNet.textContent = money(c.pkgNet);
     el.optionsNet.textContent = money(c.optNet);
-    el.costsNet.textContent = money(c.costsTotal);
+    el.costsNet.textContent = inPln
+      ? money(c.costsEur, "EUR") + (c.eurPln ? " = " + money(c.costsTotal) : "")
+      : money(c.costsTotal);
     el.barNet.textContent = money(c.net);
     el.barGross.textContent = c.pln
       ? "w złotych " + money(c.pln.net, "PLN")
@@ -1140,7 +1155,7 @@
       ? state.eurPlnSource
       : c.eurPln
         ? "kurs wpisany ręcznie"
-        : (state.currency === "PLN" ? "potrzebny do przeliczenia transportu z euro" : "puste = bez przeliczenia na złote");
+        : (state.currency === "PLN" ? "potrzebny do przeliczenia kosztów i transportu z euro" : "puste = bez przeliczenia na złote");
 
     el.diToggle.classList.toggle("on", state.di);
     el.ciToggle.classList.toggle("on", state.ci);

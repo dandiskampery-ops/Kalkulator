@@ -144,6 +144,11 @@ ale **wchodzące do podstawy skonta**:
 
 Kwoty są takie same na fakturach Carthago 200/57964 i Malibu 200/31139 i są
 wpisane domyślnie; można je zmienić albo usunąć (np. przy odbiorze w fabryce).
+Koszty z faktury wpisuje się zawsze **w euro** — przy cenniku w PLN każda pozycja
+jest przeliczana po kursie EUR/PLN (do groszy) i dopiero wtedy wchodzi do sumy
+faktury i podstawy skonta, np. „Koszty z faktury · 1357,87 € × 4,2635 =
+5789,28 zł”. Bez kursu nie wchodzą do kwoty, a kalkulacja pokazuje ostrzeżenie
+„wpisz kurs EUR/PLN”.
 W kalkulacjach zapisanych w starszej wersji kalkulatora puste pola i dawne
 18,50 € zostają raz uzupełnione tymi kwotami — kwoty wpisane ręcznie zostają.
 
@@ -265,8 +270,8 @@ włączony): 110 277,70 + akcyza 3,1% (3 418,61) = 113 696,31, plus transport
   większej od zera).
 * **Kurs EUR/PLN** — przy cenniku w EUR kalkulacja pokazuje dodatkowo sekcję
   „W złotych” (faktura po skoncie, akcyza, transport i koszt auta), a pasek na
-  telefonie kwotę w złotych; przy cenniku w PLN kurs przelicza transport do
-  Polski. Kurs średni EUR z tabeli A NBP pobiera się sam przy otwarciu
+  telefonie kwotę w złotych; przy cenniku w PLN kurs przelicza koszty z faktury
+  i transport do Polski (kwoty w euro). Kurs średni EUR z tabeli A NBP pobiera się sam przy otwarciu
   kalkulatora (gdy pole jest puste albo kurs pochodzi z NBP) i na przycisk
   **NBP**; numer tabeli i data są widoczne też na wydruku. Kurs wpisany ręcznie
   zostaje, dopóki się go nie zmieni, a „Wyczyść” kursu nie kasuje.
