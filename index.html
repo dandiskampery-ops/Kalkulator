@@ -67,6 +67,7 @@
     --accent-soft: #e2edf4;
     --good: #11694a;
     --good-soft: #e3f1ea;
+    --warn: #b23c2e;
     --shadow: 0 1px 2px rgba(16, 26, 36, .06), 0 8px 24px -18px rgba(16, 26, 36, .5);
     --r: 12px;
     --display: "Barlow Condensed", "Arial Narrow", sans-serif;
@@ -88,6 +89,7 @@
       --accent-soft: #1c2f3d;
       --good: #58c496;
       --good-soft: #14302a;
+      --warn: #ef8a7a;
       --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 26px -20px rgba(0, 0, 0, .9);
     }
   }
@@ -105,6 +107,7 @@
     --accent-soft: #1c2f3d;
     --good: #58c496;
     --good-soft: #14302a;
+    --warn: #ef8a7a;
     --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 26px -20px rgba(0, 0, 0, .9);
   }
 
@@ -380,6 +383,7 @@
   }
   .totals .pay > span:last-child { font-size: 26px; font-weight: 600; }
   .totals .minor { font-size: 13px; color: var(--ink-3); }
+  .totals .warn { font-size: 14px; color: var(--warn); }
   .totals.pln { margin-top: 6px; padding-top: 10px; border-top: 1px dashed var(--line); }
   .totals .plnhead > span:first-child {
     font-family: var(--display);
@@ -579,10 +583,10 @@
       <div class="withrate wide">
         <label class="toggle" id="transportToggle">
           <input id="transport" type="checkbox">
-          <span class="label">Transport do Polski<span class="sub">po akcyzie, bez rabatu</span></span>
+          <span class="label">Transport do Polski<span class="sub">netto w euro, po akcyzie</span></span>
         </label>
         <label class="ratebox">
-          <input id="transportRate" class="num" type="text" inputmode="decimal" aria-label="Koszt transportu do Polski">
+          <input id="transportRate" class="num" type="text" inputmode="decimal" aria-label="Koszt transportu do Polski w euro"><span>€</span>
         </label>
       </div>
     </section>
@@ -611,7 +615,7 @@
             <option value="PLN">PLN</option>
           </select>
         </label>
-        <div class="field" id="eurPlnField">
+        <div class="field">
           <span>Kurs EUR/PLN</span>
           <div class="withbtn">
             <input id="eurPln" class="num" type="text" inputmode="decimal" placeholder="np. 4,2500" aria-label="Kurs EUR/PLN">
@@ -706,11 +710,13 @@
       { name: "Delivery costs (poz. 100005)", price: "729,30" },
       { name: "Insurance allowance (poz. 100007)", price: "25,00" }
     ],
-    costsVersion: 2,
+    // Numer wersji zapisu — do jednorazowych aktualizacji kalkulacji zapisanych wcześniej.
+    version: 3,
     chassis: "mb",
     exciseRate: "3,1",
     transport: false,
-    transportRate: "1100",
+    // Transport do Polski zawsze w euro; przy cenniku w PLN przeliczany po kursie.
+    transportRate: "1200",
     currency: "EUR",
     eurPln: "",
     eurPlnSource: "",
@@ -726,7 +732,7 @@
 
   var state = (function () {
     var s = clone(defaults);
-    var legacyCosts = false;
+    var version = defaults.version;
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -734,15 +740,16 @@
         Object.keys(defaults).forEach(function (k) {
           if (saved[k] !== undefined && saved[k] !== null) s[k] = saved[k];
         });
-        legacyCosts = !saved.costsVersion;
+        // costsVersion: 2 — zapis sprzed pola version.
+        version = saved.version || saved.costsVersion || 1;
       }
     } catch (e) { /* brak dostępu do pamięci przeglądarki — start od wartości domyślnych */ }
     if (!Array.isArray(s.packages) || !s.packages.length) s.packages = [{ name: "", price: "" }];
     if (!Array.isArray(s.options) || !s.options.length) s.options = [{ name: "", price: "" }];
     if (!Array.isArray(s.costs) || !s.costs.length) s.costs = clone(defaults.costs);
-    // Jednorazowo: dawne domyślne koszty (puste / puste / 18,50) zastępujemy kwotami
-    // z faktur; kwoty wpisane ręcznie zostają.
-    if (legacyCosts) {
+    // Jednorazowe aktualizacje dawnych wartości domyślnych; kwoty wpisane ręcznie zostają.
+    if (version < 2) {
+      // koszty: puste / puste / 18,50 → kwoty z faktur
       var oldPrices = ["", "", "18,50"];
       s.costs.forEach(function (k) {
         defaults.costs.forEach(function (d, i) {
@@ -750,6 +757,8 @@
         });
       });
     }
+    if (version < 3 && s.transportRate === "1100") s.transportRate = defaults.transportRate;
+    s.version = defaults.version;
     return s;
   })();
 
@@ -765,7 +774,7 @@
    "optionDiscount", "optionRows", "optionsNet", "addOption",
    "costRows", "costsNet", "addCost", "chassis", "exciseRate",
    "transport", "transportRate",
-   "currency", "eurPln", "eurPlnField", "eurPlnInfo", "nbp", "vat", "skonto", "skontoRate",
+   "currency", "eurPln", "eurPlnInfo", "nbp", "vat", "skonto", "skontoRate",
    "diToggle", "ciToggle", "bonusToggle", "transportToggle", "skontoToggle",
    "sumBody", "totals", "plnTotals", "saving", "stamp", "barNet", "barGross", "print", "reset"]
   .forEach(function (id) { el[id] = document.getElementById(id); });
@@ -820,9 +829,9 @@
     return new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(v);
   }
 
-  // Kurs EUR/PLN — tylko gdy ceny są w euro; 0 = bez przeliczenia na złote.
+  // Kurs EUR/PLN; 0 = brak kursu.
   function eurPlnRate() {
-    return state.currency === "EUR" ? parse(state.eurPln, false) : 0;
+    return parse(state.eurPln, false);
   }
 
   function modelById(id) {
@@ -868,8 +877,11 @@
     return c ? c.label : "";
   }
 
-  function transportCost() {
-    return state.transport ? num(state.transportRate) : 0;
+  // Transport do Polski w euro (cennik w PLN: przeliczony po kursie; bez kursu nie wchodzi
+  // do kwoty — kalkulacja pokazuje, że brakuje kursu).
+  function transportCost(eurPln) {
+    var eur = state.transport ? num(state.transportRate) : 0;
+    return state.currency === "PLN" ? round(eur * eurPln) : eur;
   }
 
   function sumItems(items) {
@@ -918,7 +930,9 @@
     // Koszty z faktury (transport fabryczny, ubezpieczenie) wchodzą do podstawy skonta.
     var costsTotal = state.costs.reduce(function (a, k) { return a + num(k.price); }, 0);
     // Transport do Polski nie jest rabatowany ani objęty skontem — dochodzi na końcu.
-    var transport = transportCost();
+    var eurPln = eurPlnRate();
+    var transportEur = state.transport ? num(state.transportRate) : 0;
+    var transport = transportCost(eurPln);
 
     var listTotal = baseList + pkgList + optList;
     var afterDiscounts = baseNet + pkgNet + optNet;
@@ -936,10 +950,10 @@
     var vatRate = pct(state.vat);
     var vat = round(net * vatRate / 100);
 
-    // Przeliczenie na złote: każda pozycja osobno do groszy, suma z przeliczonych pozycji.
+    // Cennik w euro → przeliczenie na złote: każda pozycja osobno do groszy, suma
+    // z przeliczonych pozycji.
     var pln = null;
-    var eurPln = eurPlnRate();
-    if (eurPln > 0) {
+    if (state.currency === "EUR" && eurPln > 0) {
       var invoicePln = round(invoiceNet * eurPln);
       var excisePln = round(excise * eurPln);
       var transportPln = round(transport * eurPln);
@@ -952,7 +966,7 @@
     }
 
     return {
-      pln: pln,
+      pln: pln, eurPln: eurPln, transportEur: transportEur,
       baseList: baseList, baseDisc: baseDisc, baseNet: baseNet, special: special,
       pkgList: pkgList, pkgDisc: pkgDisc, pkgNet: pkgNet,
       optList: optList, optDisc: optDisc, optNet: optNet,
@@ -1105,7 +1119,9 @@
     if (c.skontoRate > 0) {
       lines.push({ label: "Skonto " + percent(c.skontoRate) + " · 14 dni", value: "− " + money(c.skontoAmount), cls: "cut" });
     }
-    var hasExtras = c.transport > 0 || c.excise > 0;
+    // Cennik w PLN bez kursu: transportu w euro nie da się doliczyć.
+    var transportMissing = state.currency === "PLN" && c.transportEur > 0 && !c.eurPln;
+    var hasExtras = c.transport > 0 || c.excise > 0 || transportMissing;
     if (hasExtras) {
       lines.push({ label: "Faktura po skoncie", value: money(c.invoiceNet) });
     }
@@ -1116,7 +1132,15 @@
       lines.push({ label: "Cena po akcyzie", value: money(c.afterExcise) });
     }
     if (c.transport > 0) {
-      lines.push({ label: "Transport do Polski", value: "+ " + money(c.transport) });
+      lines.push({
+        label: state.currency === "PLN"
+          ? "Transport do Polski · " + money(c.transportEur, "EUR") + " × " + rateText(c.eurPln)
+          : "Transport do Polski",
+        value: "+ " + money(c.transport)
+      });
+    }
+    if (transportMissing) {
+      lines.push({ label: "Transport do Polski " + money(c.transportEur, "EUR") + " — wpisz kurs EUR/PLN", value: "—", cls: "warn" });
     }
     var payLabel = hasExtras ? "Koszt auta netto" : "Do zapłaty netto";
     lines.push({ label: payLabel, value: money(c.net), cls: "pay" });
@@ -1161,10 +1185,11 @@
         ? "brutto " + money(c.gross)
         : (c.excise > 0 ? "w tym akcyza " + money(c.excise) : "przed skontem " + money(c.subtotal));
 
-    el.eurPlnField.hidden = state.currency !== "EUR";
     el.eurPlnInfo.textContent = state.eurPlnSource
       ? state.eurPlnSource
-      : (c.pln ? "kurs wpisany ręcznie" : "puste = bez przeliczenia na złote");
+      : c.eurPln
+        ? "kurs wpisany ręcznie"
+        : (state.currency === "PLN" ? "potrzebny do przeliczenia transportu z euro" : "puste = bez przeliczenia na złote");
 
     el.diToggle.classList.toggle("on", state.di);
     el.ciToggle.classList.toggle("on", state.ci);
@@ -1298,7 +1323,10 @@
   });
 
   // Ostatni kurs średni EUR z tabeli A NBP (publikowana w dni robocze ok. 12:00).
-  el.nbp.addEventListener("click", function () {
+  // auto: pobranie przy otwarciu — nie nadpisuje kursu wpisanego w międzyczasie,
+  // a offline z zapisanym kursem nie pokazuje błędu.
+  function fetchNbp(auto) {
+    var before = state.eurPln;
     el.nbp.disabled = true;
     el.eurPlnInfo.textContent = "Pobieram kurs NBP…";
     fetch("https://api.nbp.pl/api/exchangerates/rates/a/eur/?format=json", { cache: "no-store" })
@@ -1307,19 +1335,32 @@
         return response.json();
       })
       .then(function (data) {
+        if (auto && state.eurPln !== before) return;
         var rate = data.rates[0];
         state.eurPln = rateText(rate.mid);
         state.eurPlnSource = "kurs średni NBP, tabela " + rate.no + " z " +
           rate.effectiveDate.split("-").reverse().join(".");
         el.eurPln.value = state.eurPln;
         save();
-        render();
       })
       .catch(function () {
+        if (auto && state.eurPln) return;
+        render();
         el.eurPlnInfo.textContent = "Nie udało się pobrać kursu NBP — wpisz go ręcznie.";
+        return true;
       })
-      .then(function () { el.nbp.disabled = false; });
-  });
+      .then(function (failed) {
+        el.nbp.disabled = false;
+        if (!failed) render();
+      });
+  }
+
+  // Kurs pobrany z NBP odświeża się przy każdym otwarciu; wpisany ręcznie zostaje.
+  function refreshNbp() {
+    if (!state.eurPln || state.eurPlnSource) fetchNbp(true);
+  }
+
+  el.nbp.addEventListener("click", function () { fetchNbp(false); });
   bind(el.skonto, "skonto", true);
   bind(el.skontoRate, "skontoRate");
 
@@ -1345,7 +1386,11 @@
 
   el.reset.addEventListener("click", function () {
     if (!window.confirm("Wyczyścić całą kalkulację?")) return;
+    // Kurs EUR/PLN nie należy do kalkulacji — zostaje.
+    var rate = { eurPln: state.eurPln, eurPlnSource: state.eurPlnSource };
     state = clone(defaults);
+    state.eurPln = rate.eurPln;
+    state.eurPlnSource = rate.eurPlnSource;
     save();
     fillInputs();
     render();
@@ -1354,6 +1399,7 @@
   buildSelects();
   fillInputs();
   render();
+  refreshNbp();
 })();
 </script>
 <div id="updateBar" role="status">

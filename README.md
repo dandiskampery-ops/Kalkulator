@@ -161,9 +161,16 @@ Stawka zależy od podwozia i jest edytowalna:
 
 ### Transport do Polski (na końcu)
 
-Koszt własny **1100 € netto**, włączany przełącznikiem. Nie jest rabatowany,
+Koszt własny **1200 € netto**, włączany przełącznikiem. Nie jest rabatowany,
 **nie wchodzi do podstawy skonta** i dochodzi **po akcyzie** — jako ostatnia
 pozycja kalkulacji.
+
+Kwota transportu jest zawsze **w euro**. Przy cenniku w EUR doliczana jest wprost
+(a w sekcji „W złotych” przeliczona po kursie); przy cenniku w PLN kalkulator
+przelicza ją po kursie EUR/PLN, np. „Transport do Polski · 1200,00 € × 4,2635 =
+5116,20 zł”. Bez kursu transport nie wchodzi do kwoty, a kalkulacja pokazuje
+ostrzeżenie „wpisz kurs EUR/PLN”. W kalkulacjach zapisanych przy dawnej stawce
+1100 € kwota zmienia się raz na 1200 € (inna kwota wpisana ręcznie zostaje).
 
 ### Skonto za płatność w terminie 14 dni
 
@@ -248,19 +255,21 @@ wpisane cenami brutto z potwierdzenia zamówienia, tryb „brutto z VAT 23%”:
 
 Dalszy ciąg kalkulacji dla faktury 200/56533 (Mercedes-Benz, transport
 włączony): 110 277,70 + akcyza 3,1% (3 418,61) = 113 696,31, plus transport
-1 100,00 → **114 796,31 €**. Dla podwozia Fiat lub Iveco (18,6%): akcyza
-20 511,65 → **131 889,35 €**.
+1 200,00 → **114 896,31 €**. Dla podwozia Fiat lub Iveco (18,6%): akcyza
+20 511,65 → **131 989,35 €**.
 
 ## Pozostałe funkcje
 
 * Waluta cennika **EUR / PLN** oraz edytowalna stawka VAT (0% = dostawa
   wewnątrzwspólnotowa; wiersze VAT i brutto pojawiają się dopiero przy stawce
   większej od zera).
-* **Kurs EUR/PLN** — po wpisaniu kursu kalkulacja pokazuje dodatkowo sekcję
+* **Kurs EUR/PLN** — przy cenniku w EUR kalkulacja pokazuje dodatkowo sekcję
   „W złotych” (faktura po skoncie, akcyza, transport i koszt auta), a pasek na
-  telefonie kwotę w złotych. Przycisk **NBP** pobiera ostatni kurs średni EUR z
-  tabeli A NBP i zapisuje numer tabeli oraz datę (widoczne też na wydruku). Puste
-  pole = bez przeliczenia.
+  telefonie kwotę w złotych; przy cenniku w PLN kurs przelicza transport do
+  Polski. Kurs średni EUR z tabeli A NBP pobiera się sam przy otwarciu
+  kalkulatora (gdy pole jest puste albo kurs pochodzi z NBP) i na przycisk
+  **NBP**; numer tabeli i data są widoczne też na wydruku. Kurs wpisany ręcznie
+  zostaje, dopóki się go nie zmieni, a „Wyczyść” kursu nie kasuje.
 * Kwoty można wpisywać po polsku, po niemiecku jak na fakturach i po angielsku —
   `130 630`, `130.630,00`, `130,630.00` i `18 626,03` działają poprawnie;
   wklejone „€” czy „EUR” są pomijane.
