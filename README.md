@@ -144,6 +144,11 @@ ale **wchodzące do podstawy skonta**:
 
 Kwoty są takie same na fakturach Carthago 200/57964 i Malibu 200/31139 i są
 wpisane domyślnie; można je zmienić albo usunąć (np. przy odbiorze w fabryce).
+Koszty z faktury wpisuje się zawsze **w euro** — przy cenniku w PLN każda pozycja
+jest przeliczana po kursie EUR/PLN (do groszy) i dopiero wtedy wchodzi do sumy
+faktury i podstawy skonta, np. „Koszty z faktury · 1357,87 € × 4,2635 =
+5789,28 zł”. Bez kursu nie wchodzą do kwoty, a kalkulacja pokazuje ostrzeżenie
+„wpisz kurs EUR/PLN”.
 W kalkulacjach zapisanych w starszej wersji kalkulatora puste pola i dawne
 18,50 € zostają raz uzupełnione tymi kwotami — kwoty wpisane ręcznie zostają.
 
@@ -161,9 +166,16 @@ Stawka zależy od podwozia i jest edytowalna:
 
 ### Transport do Polski (na końcu)
 
-Koszt własny **1100 € netto**, włączany przełącznikiem. Nie jest rabatowany,
+Koszt własny **1200 € netto**, włączany przełącznikiem. Nie jest rabatowany,
 **nie wchodzi do podstawy skonta** i dochodzi **po akcyzie** — jako ostatnia
 pozycja kalkulacji.
+
+Kwota transportu jest zawsze **w euro**. Przy cenniku w EUR doliczana jest wprost
+(a w sekcji „W złotych” przeliczona po kursie); przy cenniku w PLN kalkulator
+przelicza ją po kursie EUR/PLN, np. „Transport do Polski · 1200,00 € × 4,2635 =
+5116,20 zł”. Bez kursu transport nie wchodzi do kwoty, a kalkulacja pokazuje
+ostrzeżenie „wpisz kurs EUR/PLN”. W kalkulacjach zapisanych przy dawnej stawce
+1100 € kwota zmienia się raz na 1200 € (inna kwota wpisana ręcznie zostaje).
 
 ### Skonto za płatność w terminie 14 dni
 
@@ -248,19 +260,21 @@ wpisane cenami brutto z potwierdzenia zamówienia, tryb „brutto z VAT 23%”:
 
 Dalszy ciąg kalkulacji dla faktury 200/56533 (Mercedes-Benz, transport
 włączony): 110 277,70 + akcyza 3,1% (3 418,61) = 113 696,31, plus transport
-1 100,00 → **114 796,31 €**. Dla podwozia Fiat lub Iveco (18,6%): akcyza
-20 511,65 → **131 889,35 €**.
+1 200,00 → **114 896,31 €**. Dla podwozia Fiat lub Iveco (18,6%): akcyza
+20 511,65 → **131 989,35 €**.
 
 ## Pozostałe funkcje
 
 * Waluta cennika **EUR / PLN** oraz edytowalna stawka VAT (0% = dostawa
   wewnątrzwspólnotowa; wiersze VAT i brutto pojawiają się dopiero przy stawce
   większej od zera).
-* **Kurs EUR/PLN** — po wpisaniu kursu kalkulacja pokazuje dodatkowo sekcję
+* **Kurs EUR/PLN** — przy cenniku w EUR kalkulacja pokazuje dodatkowo sekcję
   „W złotych” (faktura po skoncie, akcyza, transport i koszt auta), a pasek na
-  telefonie kwotę w złotych. Przycisk **NBP** pobiera ostatni kurs średni EUR z
-  tabeli A NBP i zapisuje numer tabeli oraz datę (widoczne też na wydruku). Puste
-  pole = bez przeliczenia.
+  telefonie kwotę w złotych; przy cenniku w PLN kurs przelicza koszty z faktury
+  i transport do Polski (kwoty w euro). Kurs średni EUR z tabeli A NBP pobiera się sam przy otwarciu
+  kalkulatora (gdy pole jest puste albo kurs pochodzi z NBP) i na przycisk
+  **NBP**; numer tabeli i data są widoczne też na wydruku. Kurs wpisany ręcznie
+  zostaje, dopóki się go nie zmieni, a „Wyczyść” kursu nie kasuje.
 * Kwoty można wpisywać po polsku, po niemiecku jak na fakturach i po angielsku —
   `130 630`, `130.630,00`, `130,630.00` i `18 626,03` działają poprawnie;
   wklejone „€” czy „EUR” są pomijane.
