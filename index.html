@@ -499,7 +499,7 @@
         <div class="withrate">
           <label class="toggle" id="diToggle">
             <input id="di" type="checkbox">
-            <span class="label">Rabat DI<span class="sub">order type · demo</span></span>
+            <span class="label">Rabat DI<span class="sub">dispo / demo</span></span>
           </label>
           <label class="ratebox">
             <input id="diRate" class="num" type="text" inputmode="decimal" aria-label="Rabat DI w procentach"><span>%</span>
@@ -508,7 +508,7 @@
         <div class="withrate">
           <label class="toggle" id="ciToggle">
             <input id="ci" type="checkbox">
-            <span class="label">Rabat CI<span class="sub">wg faktur 3%</span></span>
+            <span class="label">Rabat CI<span class="sub">starsze faktury</span></span>
           </label>
           <label class="ratebox">
             <input id="ciRate" class="num" type="text" inputmode="decimal" aria-label="Rabat CI w procentach"><span>%</span>
@@ -517,7 +517,7 @@
         <div class="withrate">
           <label class="toggle" id="bonusToggle">
             <input id="bonus" type="checkbox">
-            <span class="label">Quality Bonus<span class="sub">Malibu 2%</span></span>
+            <span class="label">Quality Bonus<span class="sub">Carthago / Malibu</span></span>
           </label>
           <label class="ratebox">
             <input id="bonusRate" class="num" type="text" inputmode="decimal" aria-label="Quality Bonus w procentach"><span>%</span>
@@ -659,18 +659,17 @@
 (function () {
   "use strict";
 
-  // Wybór modelu ustawia rabaty jak na fakturach tej marki. Carthago: tylko rabat
-  // modelowy (DI i CI zostają, jak je ustawiono). Malibu (faktura 200/31139): rabat
-  // modelowy 10% + Quality Bonus 2% + rabat demo 3% (order type, Sales Type VW3),
-  // bez rabatu CI. insurance — domyślna kwota insurance allowance tej marki.
+  // Wybór modelu ustawia rabaty jak na fakturach tej marki, bez rabatu CI:
+  // Carthago (200/57964): rabat modelowy + Quality Bonus 3% + Dispo 4% (order type, DI4),
+  // Malibu (200/31139): rabat modelowy 10% + Quality Bonus 2% + demo 3% (order type, VW3).
   var MODELS = [
-    { id: "c1-tourer", brand: "Carthago", label: "C1-Tourer", discount: 10, insurance: "18,50" },
-    { id: "c2-tourer", brand: "Carthago", label: "C2-Tourer", discount: 11, insurance: "18,50" },
-    { id: "c-line", brand: "Carthago", label: "Chic C-Line (T / I Integra)", discount: 11, insurance: "18,50" },
-    { id: "e-line", brand: "Carthago", label: "Chic E-Line", discount: 12, insurance: "18,50" },
-    { id: "s-plus", brand: "Carthago", label: "Chic S-Plus", discount: 12, insurance: "18,50" },
-    { id: "malibu-i", brand: "Malibu", label: "Malibu I", discount: 10, bonus: 2, di: 3, ci: false, insurance: "25,00" },
-    { id: "malibu-t", brand: "Malibu", label: "Malibu T", discount: 10, bonus: 2, di: 3, ci: false, insurance: "25,00" },
+    { id: "c1-tourer", brand: "Carthago", label: "C1-Tourer", discount: 10, bonus: 3, di: 4, ci: false },
+    { id: "c2-tourer", brand: "Carthago", label: "C2-Tourer", discount: 11, bonus: 3, di: 4, ci: false },
+    { id: "c-line", brand: "Carthago", label: "Chic C-Line (T / I Integra)", discount: 11, bonus: 3, di: 4, ci: false },
+    { id: "e-line", brand: "Carthago", label: "Chic E-Line", discount: 12, bonus: 3, di: 4, ci: false },
+    { id: "s-plus", brand: "Carthago", label: "Chic S-Plus", discount: 12, bonus: 3, di: 4, ci: false },
+    { id: "malibu-i", brand: "Malibu", label: "Malibu I", discount: 10, bonus: 2, di: 3, ci: false },
+    { id: "malibu-t", brand: "Malibu", label: "Malibu T", discount: 10, bonus: 2, di: 3, ci: false },
     { id: "inny", brand: "", label: "Inny model (rabat ręcznie)", discount: 0 }
   ];
 
@@ -701,11 +700,13 @@
     optionDiscount: "18",
     packages: [{ name: "", price: "" }],
     options: [{ name: "", price: "" }],
+    // Koszty z faktur Carthago i Malibu (200/57964, 200/31139).
     costs: [
-      { name: "Prior carriage charges (poz. 100002)", price: "" },
-      { name: "Delivery costs (poz. 100005)", price: "" },
-      { name: "Insurance allowance (poz. 100007)", price: "18,50" }
+      { name: "Prior carriage charges (poz. 100002)", price: "603,57" },
+      { name: "Delivery costs (poz. 100005)", price: "729,30" },
+      { name: "Insurance allowance (poz. 100007)", price: "25,00" }
     ],
+    costsVersion: 2,
     chassis: "mb",
     exciseRate: "3,1",
     transport: false,
@@ -718,10 +719,14 @@
     skontoRate: "2"
   };
 
+  // Rabaty startowe — jak przy wyborze domyślnego modelu.
+  applyModel(defaults, modelById(defaults.model));
+
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
   var state = (function () {
     var s = clone(defaults);
+    var legacyCosts = false;
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -729,11 +734,22 @@
         Object.keys(defaults).forEach(function (k) {
           if (saved[k] !== undefined && saved[k] !== null) s[k] = saved[k];
         });
+        legacyCosts = !saved.costsVersion;
       }
     } catch (e) { /* brak dostępu do pamięci przeglądarki — start od wartości domyślnych */ }
     if (!Array.isArray(s.packages) || !s.packages.length) s.packages = [{ name: "", price: "" }];
     if (!Array.isArray(s.options) || !s.options.length) s.options = [{ name: "", price: "" }];
     if (!Array.isArray(s.costs) || !s.costs.length) s.costs = clone(defaults.costs);
+    // Jednorazowo: dawne domyślne koszty (puste / puste / 18,50) zastępujemy kwotami
+    // z faktur; kwoty wpisane ręcznie zostają.
+    if (legacyCosts) {
+      var oldPrices = ["", "", "18,50"];
+      s.costs.forEach(function (k) {
+        defaults.costs.forEach(function (d, i) {
+          if (k.name === d.name && k.price === oldPrices[i]) k.price = d.price;
+        });
+      });
+    }
     return s;
   })();
 
@@ -822,31 +838,18 @@
     return m.label + " — " + total + "%" + (parts.length > 1 ? " (" + parts.join(" + ") + ")" : "");
   }
 
-  // Ustawia rabaty z faktur wybranej marki. DI i CI ustawione przez Malibu wracają
-  // do wartości domyślnych po przejściu na model, który ich nie określa.
-  function applyModel(m, prev) {
-    if (m.discount > 0) state.baseDiscount = String(m.discount);
-    state.bonus = !!m.bonus;
-    if (m.bonus) state.bonusRate = String(m.bonus);
+  // Ustawia w target rabaty z faktur marki modelu; „Inny model” niczego nie zmienia.
+  function applyModel(target, m) {
+    if (m.discount > 0) target.baseDiscount = String(m.discount);
+    if (m.bonus !== undefined) {
+      target.bonus = m.bonus > 0;
+      if (m.bonus > 0) target.bonusRate = String(m.bonus);
+    }
     if (m.di !== undefined) {
-      state.di = m.di > 0;
-      if (m.di > 0) state.diRate = String(m.di);
-    } else if (prev && prev.di !== undefined) {
-      state.di = defaults.di;
-      state.diRate = defaults.diRate;
+      target.di = m.di > 0;
+      if (m.di > 0) target.diRate = String(m.di);
     }
-    if (m.ci !== undefined) state.ci = m.ci;
-    else if (prev && prev.ci !== undefined) state.ci = defaults.ci;
-    // Insurance allowance różni się między markami (18,50 / 25,00 €) — podmieniamy
-    // tylko kwotę pustą albo domyślną poprzedniej marki, ręcznie wpisana zostaje.
-    if (m.insurance) {
-      state.costs.forEach(function (k) {
-        if (!/^Insurance allowance/.test(k.name)) return;
-        if (!num(k.price) || (prev && prev.insurance && num(k.price) === num(prev.insurance))) {
-          k.price = m.insurance;
-        }
-      });
-    }
+    if (m.ci !== undefined) target.ci = m.ci;
   }
 
   // Rabaty procentowe na pojazd bazowy liczone są od ceny katalogowej i sumowane
@@ -1248,10 +1251,9 @@
   }
 
   el.model.addEventListener("change", function () {
-    var prev = modelById(state.model);
     var m = modelById(el.model.value);
     state.model = el.model.value;
-    if (m) applyModel(m, prev);
+    if (m) applyModel(state, m);
     save();
     fillInputs();
     render();
